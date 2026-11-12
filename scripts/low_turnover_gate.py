@@ -1,28 +1,31 @@
 #!/usr/bin/env python
-"""Low-turnover anomaly gate — the cost regime everything else lacked.
+"""Low-turnover anomaly gate — the cost math finally matches.
 
-Every prior falsification ran at daily-or-faster turnover where 5bps
-per trade dominates. This gate tests hypotheses whose natural
-frequency is weekly-to-monthly, where the same 5bps is amortized:
+Every prior falsification traded daily-or-faster where 5bps/trade
+dominates. At monthly/weekly horizons cost is ~5bps ONCE per
+rebalance — anomalies that were sub-cost intraday may clear here.
 
-  A) 12-1 month cross-sectional momentum (equities): each month-end,
-     rank symbols by return over months [t-12, t-2] (skip most recent
-     month — the reversal month); long top quintile, short bottom
-     quintile, equal weight. Monthly rebalance; cost charged on
-     actual weight changes.
+Three hypothesis classes on us_stocks.db D1 bars (17 symbols,
+2012->2026):
 
-  B) Index-ETF pairs via the stat_arb machinery on D1 closes:
-     SPY/QQQ, SPY/DIA, QQQ/IWM, DIA/IWM — spread z-score fade; the
-     gate charges cost on ACTUAL position changes, so if the signal
-     holds for weeks the cost is honestly amortized (no hand-tuned
-     holding period).
+  A) 12-1 month cross-sectional momentum — rank by return over
+     months [t-12, t-2] (skip most recent), long top-5 / short
+     bottom-5 equal-weight, monthly rebalance. Turnover cost charged
+     on weight changes (x2 legs).
 
-  C) Turn-of-month effect: mean daily return on last-trading-day +
-     first-3-days vs all other days, per symbol and portfolio.
-     Descriptive anomaly check (no strategy claim unless it clears).
+  B) index-ETF pairs z-fade — SPY/QQQ, SPY/DIA, QQQ/IWM weekly closes,
+     spread=log(a)-log(b), z over 26w window; pos=-sign(z) when
+     |z|>1.5 else flat, weekly rebalance, cost x2 legs on changes.
 
-Verdicts reuse the segmented all-LCB philosophy on per-period net
-bps. Usage: python scripts/low_turnover_gate.py --db us_stocks.db
+  C) overnight anomaly by weekday / turn-of-month — overnight_bps
+     conditioned on weekday of the session and ToM window (last3+first3
+     trading days of month); long-overnight only on qualifying days.
+
+Verdicts: chronological 60/40, OOS tail in 3 contiguous segments,
+block-bootstrap LCB5 — candidate needs EVERY segment LCB>0 & mean>0.
+
+Usage: python scripts/low_turnover_gate.py \
+    --db us_stocks.db --out var/low_turnover_gate.json
 """
 
 import argparse
@@ -37,228 +40,234 @@ sys.path.insert(0, str(ROOT))
 import numpy as np  # noqa: E402
 
 from scripts.edge_baseline import block_bootstrap_lcb  # noqa: E402
-from trading_bot.core.csc.research.method_spec import (  # noqa: E402
-    PAIR_FAMILIES, align_pair, compile_rule, pair_pnl_bps,
-    spec_from_dict)
-from scripts.method_candidate import verdict_from_pnl  # noqa: E402
 
 COST_BPS = 5.0
-PAIRS = [("SPY", "QQQ"), ("SPY", "DIA"), ("QQQ", "IWM"), ("DIA", "IWM")]
+TOP_K, BOT_K = 5, 5
+Z_ENTRY = 1.5
+Z_WINDOW_W = 26
 
 
-def load_all_daily(db):
+def load_daily(db: str):
     con = sqlite3.connect(db)
-    out = {}
-    for sym, tf in con.execute(
-            "SELECT DISTINCT symbol, timeframe FROM market_data "
-            "WHERE timeframe='D1'"):
-        rows = con.execute(
-            "SELECT timestamp, open, close FROM market_data "
-            "WHERE symbol=? AND timeframe='D1' ORDER BY timestamp",
-            (sym,)).fetchall()
-        out[sym] = ([r[0] for r in rows],
-                    np.array([r[1] for r in rows]),
-                    np.array([r[2] for r in rows]))
+    rows = con.execute(
+        "SELECT symbol, timestamp, open, close FROM market_data "
+        "WHERE timeframe='D1' ORDER BY symbol, timestamp").fetchall()
     con.close()
-    return out
+    out = {}
+    for sym, ts, o, c in rows:
+        out.setdefault(sym, []).append((ts, float(o), float(c)))
+    return {s: (np.array([r[0] for r in v]),
+                np.array([r[1] for r in v]),
+                np.array([r[2] for r in v])) for s, v in out.items()}
 
 
-def month_ends(ts_list):
-    """Indices of last trading day per calendar month."""
-    ends = {}
-    for i, t in enumerate(ts_list):
-        ends[t[:7]] = i
-    return sorted(ends.values())
+def verdict(pnl, n_segments=3):
+    pnl = np.asarray(pnl, dtype=float)
+    n = len(pnl)
+    if n < 24:
+        return {"status": "insufficient_evidence", "n": int(n)}
+    split = int(n * 0.6)
+    ev = pnl[split:]
+    if len(ev) < 10:
+        return {"status": "insufficient_eval", "n": int(len(ev))}
+    m, l = block_bootstrap_lcb(ev)
+    seg_n = max(1, len(ev) // n_segments)
+    segs = []
+    for k in range(n_segments):
+        a, b = k * seg_n, (k + 1) * seg_n if k < n_segments - 1 \
+            else len(ev)
+        if b - a < 4:
+            segs.append({"status": "thin"})
+            continue
+        ms, ls = block_bootstrap_lcb(ev[a:b])
+        segs.append({"mean": round(ms, 2), "lcb5": round(ls, 2)})
+    ok = (len([s for s in segs if "lcb5" in s]) == 3
+          and all(s["lcb5"] > 0 for s in segs if "lcb5" in s) and m > 0)
+    return {"n": int(n), "mean_bps": round(m, 3), "lcb5": round(l, 3),
+            "segments": segs,
+            "verdict": "candidate" if ok else "rejected"}
 
 
-def momentum_12_1(closes_by_sym):
-    """Long-short quintile spread, monthly. Returns per-month net bps
-    series (already cost-adjusted on weight turnover)."""
-    # align on the exact shared calendar: keep only symbols whose
-    # date set equals the reference's (META is missing interior bars —
-    # positional indexing would silently misalign returns)
-    date_close = {}
-    for s, (ts, o, c) in closes_by_sym.items():
-        date_close[s] = {t[:10]: float(c[i])
-                         for i, t in enumerate(ts)}
-    ref_dates = sorted(date_close[max(
-        date_close, key=lambda s: len(date_close[s]))])
-    ref_set = set(ref_dates)
-    data = {}
-    for s, dc in date_close.items():
-        if set(dc) == ref_set:
-            data[s] = np.array([dc[d] for d in ref_dates])
-    dropped = sorted(set(closes_by_sym) - set(data))
-    if dropped:
-        print(f"  momentum universe dropped (calendar mismatch): "
-              f"{dropped}")
-    syms = sorted(data)
-    ts_ref = [f"{d}T00:00:00+00:00" for d in ref_dates]
-    ends = month_ends(ts_ref)
-    # need ~13 months history before first signal
-    rets_m = {}
-    for s in syms:
-        c = data[s]
-        # daily log returns -> monthly compound via resample on ends
-        rets_m[s] = np.diff(np.log(c), prepend=np.log(c[0]))
+def monthly_momentum(data, cost_bps):
+    """12-1 momentum, top5 long / bottom5 short, monthly rebalance.
+    Returns monthly net-bps series."""
+    # month index per bar: YYYYMM from timestamp
+    series = {}
+    for sym, (ts, o, c) in data.items():
+        months = np.array([int(str(t)[:7].replace("-", "")) for t in ts])
+        # last close per month
+        um, inv = np.unique(months, return_inverse=True)
+        mc = np.full(len(um), np.nan)
+        mc[inv] = c  # last write wins per month (ordered input)
+        series[sym] = (um, mc)
+    all_months = sorted(set().union(*[set(s[0]) for s in
+                                      series.values()]))
+    midx = {m: i for i, m in enumerate(all_months)}
+    T = len(all_months)
+    # close matrix sym x month (ffill)
+    syms = sorted(series)
+    C = np.full((len(syms), T), np.nan)
+    for si, s in enumerate(syms):
+        um, mc = series[s]
+        for m, v in zip(um, mc):
+            C[si, midx[m]] = v
+    for si in range(len(syms)):
+        for t in range(1, T):
+            if np.isnan(C[si, t]):
+                C[si, t] = C[si, t - 1]
+    # momentum at month-end t: return over months t-12..t-2 (skip t-1)
     pnl = []
-    prev_w = {s: 0.0 for s in syms}
-    months = []
-    for k in range(13, len(ends) - 1):
-        e_now, e_prev = ends[k], ends[k - 1]
-        # momentum window: months [k-12, k-2] -> daily bars between
-        # month-end indices ends[k-12]..ends[k-2]
-        a, b = ends[k - 12], ends[k - 2]
-        if b <= a:
+    prev_w = np.zeros(len(syms))
+    for t in range(13, T - 1):
+        mom = np.full(len(syms), np.nan)
+        for si in range(len(syms)):
+            if np.isfinite(C[si, t - 2]) and np.isfinite(C[si, t - 12]):
+                mom[si] = C[si, t - 2] / C[si, t - 12] - 1.0
+        ok = np.isfinite(mom)
+        if ok.sum() < 2 * TOP_K:
             continue
-        scores = {}
-        for s in syms:
-            c = data[s]
-            if b >= len(c) or a >= len(c):
-                continue
-            scores[s] = float(np.log(c[b] / c[a]))
-        if len(scores) < 6:
+        order = np.argsort(np.where(ok, mom, -np.inf))
+        w = np.zeros(len(syms))
+        shorts = order[:BOT_K]
+        longs = order[-TOP_K:]
+        valid_l = [i for i in longs if ok[i]]
+        valid_s = [i for i in shorts if ok[i]]
+        if len(valid_l) < TOP_K or len(valid_s) < BOT_K:
             continue
-        ranked = sorted(scores, key=scores.get)
-        q = max(1, len(ranked) // 5)
-        losers, winners = ranked[:q], ranked[-q:]
-        # next-month return: ends[k] -> ends[k+1]
-        e_next = ends[k + 1]
-        r_next = {s: float(np.log(data[s][e_next] / data[s][e_now]))
-                  for s in scores}
-        gross = (np.mean([r_next[s] for s in winners])
-                 - np.mean([r_next[s] for s in losers])) * 1e4
-        # turnover cost: weight changes on both legs
-        w = {s: 0.0 for s in syms}
-        for s in winners:
-            w[s] = 1.0 / len(winners)
-        for s in losers:
-            w[s] = -1.0 / len(losers)
-        turn = sum(abs(w[s] - prev_w[s]) for s in syms)
-        cost = turn * COST_BPS / 2.0  # per-unit-notional approx
+        w[valid_l] = 1.0 / TOP_K
+        w[valid_s] = -1.0 / BOT_K
+        # next-month return per symbol
+        r_next = C[:, t] / C[:, t - 1] - 1.0  # month t-1 -> t? see note
+        # position decided at end of month t-1 earns month t return:
+        # C[:,t]/C[:,t-1] is the return DURING month t vs t-1 close.
+        gross = float(np.nansum(w * r_next)) * 1e4
+        turnover = float(np.sum(np.abs(w - prev_w)))
+        cost = turnover * cost_bps
         pnl.append(gross - cost)
         prev_w = w
-        months.append(ts_ref[e_now][:7])
-    return np.array(pnl), months
+    return np.array(pnl)
 
 
-def pairs_low_turnover(data):
-    """stat_arb z-fade on D1 closes; gate charges actual turnover."""
+def pairs_z_fade(data, pairs, cost_bps):
+    """Weekly log-spread z-score fade on index ETFs."""
+    # resample D1 -> weekly last close
+    wk = {}
+    for sym in set(sum(([a, b] for a, b in pairs), [])):
+        if sym not in data:
+            continue
+        ts, o, c = data[sym]
+        # ISO week key
+        wkey = np.array([f"{str(t)[:4]}-W{int(__import__('datetime').datetime.fromisoformat(str(t).replace('Z','+00:00')).isocalendar().week):02d}"
+                         for t in ts])
+        uw, inv = np.unique(wkey, return_inverse=True)
+        wc = np.full(len(uw), np.nan)
+        wc[inv] = c
+        wk[sym] = wc
     out = {}
-    for a_sym, b_sym in PAIRS:
-        if a_sym not in data or b_sym not in data:
+    for a, b in pairs:
+        if a not in wk or b not in wk:
             continue
-        a_ts, a_o, a_c = data[a_sym]
-        b_ts, b_o, b_c = data[b_sym]
-        a_al, b_al = align_pair(a_ts, a_c, b_ts, b_c)
-        if len(a_al) < 500:
+        n = min(len(wk[a]), len(wk[b]))
+        ca, cb = wk[a][:n], wk[b][:n]
+        ok = np.isfinite(ca) & np.isfinite(cb)
+        ca, cb = ca[ok], cb[ok]
+        if len(ca) < Z_WINDOW_W + 20:
             continue
-        spec = spec_from_dict({
-            "spec_id": f"lt_{a_sym}_{b_sym}",
-            "hypothesis": f"{a_sym}/{b_sym} spread z-fade",
-            "family": "stat_arb",
-            "params": {"window": 60, "z": 2.0, "hedge": 1.0},
-            "pair": {"db": "us_stocks.db", "symbol": b_sym,
-                     "timeframe": "D1"}})
-        try:
-            rule2 = compile_rule(spec)
-        except Exception as e:
-            out[f"{a_sym}/{b_sym}"] = {"status": f"spec_error:{e}"}
-            continue
-        # per-leg cost x2 already inside pair_pnl_bps at COST_BPS
-        pnl = pair_pnl_bps(rule2, a_al, b_al, 1.0, COST_BPS)
-        out[f"{a_sym}/{b_sym}"] = {
-            "aligned_days": len(a_al),
-            "verdict": verdict_from_pnl(pnl, 3, 0.4, 20, 0.0,
-                                        label=f"{a_sym}/{b_sym}")}
+        spread = np.log(ca) - np.log(cb)
+        pos = np.zeros(len(ca))
+        for i in range(Z_WINDOW_W, len(ca)):
+            w = spread[i - Z_WINDOW_W:i]
+            m, s = float(np.mean(w)), float(np.std(w))
+            if s <= 0:
+                continue
+            z = (spread[i] - m) / s
+            pos[i] = -1.0 if z > Z_ENTRY else (1.0 if z < -Z_ENTRY else 0.0)
+        # weekly spread return i-1 -> i earned by pos[i-1]? pos at week
+        # i close earns next week: shift pos back one
+        pos_earn = np.concatenate([[0.0], pos[:-1]])
+        spr_ret = np.diff(spread)
+        spr_ret = np.concatenate([[0.0], spr_ret])
+        dpos = np.abs(np.diff(np.concatenate([[0.0], pos_earn])))
+        pnl = pos_earn * spr_ret * 1e4 - dpos * cost_bps * 2.0
+        out[f"{a}/{b}"] = verdict(pnl[Z_WINDOW_W:])
     return out
 
 
-def turn_of_month(data):
-    """Mean daily log-return on ToM days vs others; portfolio = mean
-    across symbols of per-day returns aligned by date."""
-    by_date = {}
-    for s, (ts, o, c) in data.items():
-        for i in range(1, len(c)):
-            d = ts[i][:10]
-            by_date.setdefault(d, {})[s] = float(
-                np.log(c[i] / c[i - 1]))
-    dates = sorted(by_date)
-    # mark ToM: last trading day of month + first 3 of next month
-    month_last = {}
-    for d in dates:
-        month_last[d[:7]] = d
-    tom = set()
-    for m, last in month_last.items():
-        # last trading day itself + first 3 dates of NEXT month
-        nxt = sorted(x for x in dates if x[:7] > m)[:3]
-        tom.add(last)
-        tom.update(nxt)
-    tom_rets, oth_rets = [], []
-    for d in dates:
-        rets = list(by_date[d].values())
-        if not rets:
-            continue
-        (tom_rets if d in tom else oth_rets).append(float(np.mean(rets)))
-    def stats(x):
-        x = np.array(x) * 1e4
-        return {"n": len(x), "mean_bps": round(float(x.mean()), 2),
-                "lcb5": round(block_bootstrap_lcb(x)[1], 2)} \
-            if len(x) >= 30 else {"n": len(x), "status": "thin"}
-    return {"tom_days": stats(tom_rets), "other_days": stats(oth_rets),
-            "n_tom": len(tom)}
+def overnight_conditioned(data, cost_bps):
+    """Overnight returns conditioned on weekday + turn-of-month."""
+    import datetime as _dt
+    groups = {}
+    for sym, (ts, o, c) in data.items():
+        for i in range(1, len(ts)):
+            on = (o[i] / c[i - 1] - 1.0) * 1e4 - cost_bps
+            d = _dt.datetime.fromisoformat(
+                str(ts[i]).replace("Z", "+00:00"))
+            wd = d.weekday()
+            day_of_month = d.day
+            # approximate ToM: first 3 or last 3 calendar days
+            import calendar as _cal
+            last_day = _cal.monthrange(d.year, d.month)[1]
+            tom = day_of_month <= 3 or day_of_month >= last_day - 2
+            groups.setdefault(f"wd{wd}", []).append(on)
+            groups.setdefault("tom" if tom else "not_tom",
+                              []).append(on)
+    return {k: verdict(np.array(v)) for k, v in groups.items()}
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default="us_stocks.db")
+    ap.add_argument("--cost-bps", type=float, default=COST_BPS)
     ap.add_argument("--out", default="var/low_turnover_gate.json")
     args = ap.parse_args()
 
-    data = load_all_daily(args.db)
-    print(f"symbols: {sorted(data)}")
+    data = load_daily(args.db)
+    print(f"loaded {len(data)} symbols")
+    report = {"gate": {"db": args.db, "cost_bps": args.cost_bps,
+                       "top_k": TOP_K, "bot_k": BOT_K,
+                       "z_entry": Z_ENTRY, "z_window_w": Z_WINDOW_W},
+              "monthly_momentum_12_1": {},
+              "pairs_z_fade": {},
+              "overnight_conditioned": {}}
 
-    report = {"gate": {"db": args.db, "cost_bps": COST_BPS},
-              "momentum_12_1": {}, "index_pairs": {},
-              "turn_of_month": {}}
+    pm = monthly_momentum(data, args.cost_bps)
+    report["monthly_momentum_12_1"] = verdict(pm)
+    r = report["monthly_momentum_12_1"]
+    print(f"[12-1 mom L/S] n={r.get('n')} mean={r.get('mean_bps')} "
+          f"lcb={r.get('lcb5')} -> {r.get('verdict', r.get('status'))}",
+          flush=True)
 
-    # A) momentum on the broad universe (ex-ETFs: use all, ETFs are
-    # legitimate momentum candidates too)
-    pnl, months = momentum_12_1(data)
-    if len(pnl) >= 30:
-        v = verdict_from_pnl(pnl, 3, 0.4, 0, 0.0,
-                             label="xs_momentum_12_1")
-        report["momentum_12_1"] = {
-            "months": len(months), "span": [months[0], months[-1]],
-            "verdict": v}
-        print(f"[momentum_12_1] months={len(months)} "
-              f"mean={v['overall'].get('mean_net_bps')} "
-              f"lcb={v['overall'].get('lcb5_net_bps')} "
-              f"-> {v['verdict']}", flush=True)
-    else:
-        report["momentum_12_1"] = {"status": "insufficient",
-                                   "months": len(pnl)}
-        print("[momentum_12_1] insufficient history")
+    pairs = [("SPY", "QQQ"), ("SPY", "DIA"), ("QQQ", "IWM"),
+             ("SPY", "IWM")]
+    pz = pairs_z_fade(data, pairs, args.cost_bps)
+    report["pairs_z_fade"] = pz
+    for k, v in pz.items():
+        print(f"[pair {k}] mean={v.get('mean_bps')} "
+              f"lcb={v.get('lcb5')} -> "
+              f"{v.get('verdict', v.get('status'))}", flush=True)
 
-    # B) index pairs
-    for k, v in pairs_low_turnover(data).items():
-        report["index_pairs"][k] = v
-        vv = v.get("verdict", {})
-        print(f"[{k}] aligned={v.get('aligned_days')} "
-              f"mean={vv.get('overall', {}).get('mean_net_bps')} "
-              f"lcb={vv.get('overall', {}).get('lcb5_net_bps')} "
-              f"-> {vv.get('verdict', v.get('status'))}", flush=True)
-
-    # C) turn-of-month
-    report["turn_of_month"] = turn_of_month(data)
-    t = report["turn_of_month"]
-    print(f"[ToM] tom n={t['tom_days'].get('n')} "
-          f"mean={t['tom_days'].get('mean_bps')}bps vs "
-          f"other={t['other_days'].get('mean_bps')}bps", flush=True)
+    oc = overnight_conditioned(data, args.cost_bps)
+    report["overnight_conditioned"] = oc
+    for k in sorted(oc):
+        v = oc[k]
+        print(f"[on {k}] n={v.get('n')} mean={v.get('mean_bps')} "
+              f"lcb={v.get('lcb5')} -> "
+              f"{v.get('verdict', v.get('status'))}", flush=True)
 
     Path("var").mkdir(exist_ok=True)
     Path(args.out).write_text(json.dumps(report, indent=2))
     print(f"-> {args.out}")
+    cands = []
+    if report["monthly_momentum_12_1"].get("verdict") == "candidate":
+        cands.append("12-1 momentum L/S")
+    cands += [f"pair {k}" for k, v in pz.items()
+              if v.get("verdict") == "candidate"]
+    cands += [f"overnight {k}" for k, v in oc.items()
+              if v.get("verdict") == "candidate"]
+    for c in cands:
+        print(f"  CANDIDATE: {c}")
+    if not cands:
+        print("  no low-turnover candidates — honest null")
     return 0
 
 
