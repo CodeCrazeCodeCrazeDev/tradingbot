@@ -526,10 +526,28 @@ def main() -> int:
               f"{scout.get('rc')} specs={len(evals)} candidates={n_cand}")
         print(f"report -> {report}")
 
+        # Live-outcome stage: refresh probe-P&L evidence records so
+        # the analyst judges the spine's own trading too. Advisory;
+        # failure must not kill the loop.
+        try:
+            import subprocess
+            lo = subprocess.run(
+                [sys.executable,
+                 str(ROOT / "scripts" / "live_outcome_report.py"),
+                 "--all-soaks"],
+                cwd=str(ROOT), capture_output=True, text=True,
+                timeout=120)
+            if lo.returncode == 0:
+                tail = (lo.stdout or "").strip().splitlines()
+                if tail:
+                    print(f"live_outcomes: {tail[-1]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"live_outcomes skipped: {exc}")
+
         # Analyst stage: re-judge ALL accumulated hunter artifacts
-        # (this cycle + history + method_candidates) into the
-        # classification queue. Advisory; failure must not kill the
-        # loop.
+        # (this cycle + history + method_candidates + live outcomes)
+        # into the classification queue. Advisory; failure must not
+        # kill the loop.
         try:
             import subprocess
             ar = subprocess.run(
