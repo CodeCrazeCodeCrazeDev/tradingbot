@@ -45,15 +45,19 @@ from trading_bot.core.csc.research.method_spec import (  # noqa: E402
 from trading_bot.core.csc.research.spec_extractor import (  # noqa: E402
     extract_specs)
 
+# finance-disambiguated: bare terms like "momentum crash" pull
+# crash-reconstruction papers, not trading methods
 DEFAULT_QUERIES = [
-    "order flow imbalance",
-    "walk forward validation",
-    "volatility regime switching",
-    "mean reversion intraday",
-    "momentum crash",
-    "pairs trading cointegration",
-    "market microstructure",
-    "event study macro announcement",
+    "order flow imbalance forex trading",
+    "walk forward validation trading strategy",
+    "volatility regime switching financial markets",
+    "intraday mean reversion currency",
+    "momentum crash equity trading",
+    "pairs trading cointegration forex",
+    "market microstructure limit order book",
+    "event study macro announcement forex",
+    "cross sectional momentum stocks",
+    "foreign exchange predictability",
 ]
 
 
