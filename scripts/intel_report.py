@@ -163,12 +163,16 @@ def main() -> int:
     if dr_path.exists():
         try:
             dr = json.loads(dr_path.read_text())
-            reqs = dr.get("requests", {})
+            all_reqs = list(dr.get("requests", {}).values())
+            reqs = [r for r in all_reqs
+                    if r.get("status") != "resolved"]
             kinds = {}
-            for r in reqs.values():
+            for r in reqs:
                 kinds[r.get("kind")] = kinds.get(r.get("kind"), 0) + 1
-            lines.append(f"- {len(reqs)} open requests ({kinds})")
-            for r in sorted(reqs.values(),
+            n_res = len(all_reqs) - len(reqs)
+            lines.append(f"- {len(reqs)} open requests ({kinds})"
+                         + (f"; {n_res} resolved" if n_res else ""))
+            for r in sorted(reqs,
                             key=lambda x: -x.get("count", 0))[:8]:
                 lines.append(
                     f"- [{r.get('kind')}] `{r.get('spec_id')}` needs "

@@ -30,6 +30,8 @@ Usage:
 import argparse
 import hashlib
 import json
+import re
+import sqlite3
 import subprocess
 import sys
 import time
@@ -264,6 +266,72 @@ def record_for_dataset(spec_dict, dspec, ds_result):
             "meta": {"origin": "operator_claim"},
         },
     }
+
+
+def resolve_data_requests(qpath: Path) -> int:
+    """Close requests whose need is now met — an entry that never
+    resolves keeps genome_eval reporting 'condition holds' forever.
+    Checkers: 'funding' needs -> funding_data.db rows; 'db:SYM'
+    dataset refs -> audit structural flags clear. Records are kept
+    with status=resolved (append-only, not deleted)."""
+    try:
+        queue = (json.loads(qpath.read_text())
+                 if qpath.exists() else None)
+    except Exception:
+        queue = None
+    if not queue:
+        return 0
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    resolved = 0
+    dq = None
+    for r in (queue.get("requests") or {}).values():
+        if r.get("status") == "resolved":
+            continue
+        need = str(r.get("need") or "")
+        ok, how = False, None
+        if "funding" in need.lower():
+            fdb = ROOT / "funding_data.db"
+            if fdb.exists():
+                try:
+                    con = sqlite3.connect(fdb)
+                    n = con.execute(
+                        "SELECT COUNT(*) FROM funding_rates").fetchone()[0]
+                    con.close()
+                    if n:
+                        ok, how = True, f"funding_rates rows={n}"
+                except Exception:
+                    pass
+        else:
+            m = re.match(r"([\w.]*\.db)[\s:]+([A-Za-z0-9_]+)", need)
+            if m:
+                if dq is None:
+                    try:
+                        dq = json.loads((ROOT / "var" / "data_quality.json")
+                                        .read_text())
+                    except Exception:
+                        dq = {}
+                dbname, sym = m.group(1), m.group(2)
+                found, flagged = False, []
+                for d in dq.get("dbs", []):
+                    if d.get("db") != dbname:
+                        continue
+                    for s in d.get("series", []):
+                        if s.get("symbol") != sym:
+                            continue
+                        found = True
+                        if any(s.get(k) for k in
+                               ("off_grid", "non_monotonic", "dup_ts")):
+                            flagged.append(s.get("timeframe"))
+                if found and not flagged:
+                    ok, how = True, "audit structural flags clear"
+        if ok:
+            r["status"] = "resolved"
+            r["resolved_at"] = now
+            r["resolution"] = how
+            resolved += 1
+    if resolved:
+        qpath.write_text(json.dumps(queue, indent=1))
+    return resolved
 
 
 def _data_action(dataset_ref) -> str:
@@ -730,6 +798,10 @@ def main() -> int:
             if n_new:
                 print(f"data_requests: +{n_new} new "
                       f"(var/data_requests.json)")
+            n_res = resolve_data_requests(
+                ROOT / "var" / "data_requests.json")
+            if n_res:
+                print(f"data_requests: {n_res} resolved")
         except Exception as exc:  # noqa: BLE001
             print(f"data_requests skipped: {exc}")
 

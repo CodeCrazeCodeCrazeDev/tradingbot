@@ -116,7 +116,8 @@ def _check(genome: dict) -> dict:
         need = cs.get("need")
         dr = _load("data_requests.json") or {}
         open_needs = [r.get("need") for r in
-                      (dr.get("requests") or {}).values()]
+                      (dr.get("requests") or {}).values()
+                      if r.get("status") != "resolved"]
         return {"holds": any(need and need in str(n)
                              for n in open_needs),
                 "detail": f"request_open={need in open_needs}"}
