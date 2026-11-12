@@ -169,6 +169,51 @@ def collect(cycles_dir: Path, cand_dir: Path):
             ds["verdict"] = (m.get("gate") or {}).get("verdict") \
                 or ds.get("verdict")
             s["records"][str(m.get("dataset"))] = _dataset_record(ds)
+
+    # methods ledger (funding_carry_eval et al.): verdict records in
+    # var/methods/ledger.jsonl — normalize into the same spec/record
+    # shape so external evaluators feed the analyst too.
+    ml = Path("var/methods/ledger.jsonl")
+    if ml.exists():
+        for line in ml.read_text(encoding="utf-8",
+                                 errors="replace").splitlines():
+            try:
+                m = json.loads(line)
+            except Exception:
+                continue
+            spec = m.get("spec") or {}
+            stats = m.get("stats") or {}
+            sym = spec.get("symbol") or spec.get("price_symbol") or "?"
+            tf = spec.get("tf") or spec.get("timeframe") or "?"
+            fam = spec.get("family") or "external_eval"
+            sid = f"{fam}_{sym}"
+            s = specs[sid]
+            s["family"] = s["family"] or fam
+            s["hypothesis"] = s["hypothesis"] or \
+                f"external eval: {fam} on {sym}"
+            if s["spec_dict"] is None:
+                s["spec_dict"] = {"spec_id": sid, "family": fam,
+                                  "hypothesis": s["hypothesis"],
+                                  "params": {},
+                                  "provenance": {"origin":
+                                                 "methods_ledger"}}
+            v = str(m.get("verdict") or "").upper()
+            ds = {"dataset": f"{spec.get('source', 'external')}:"
+                             f"{sym}:{tf}",
+                  "verdict": ("candidate" if v == "PASS"
+                              else "rejected" if v == "FAIL"
+                              else v.lower() or "rejected"),
+                  "overall": {
+                      "mean_net_bps":
+                          stats.get("net_bps_per_window"),
+                      "lcb5_net_bps": None,
+                      "trades": stats.get("windows", 0),
+                      "sharpe": stats.get("net_sharpe")},
+                  "segments": [
+                      {"mean_net_bps": x, "lcb5_net_bps": None}
+                      for x in (stats.get("segment_means_bps")
+                                or [])]}
+            s["records"][ds["dataset"]] = _dataset_record(ds)
     return specs
 
 
