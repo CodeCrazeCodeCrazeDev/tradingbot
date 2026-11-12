@@ -98,6 +98,34 @@ def main() -> int:
             lines.append(f"- `{cp.name}`: unreadable")
     lines.append("")
 
+    # --- claims funnel: text -> spec -> eval -> verdict -> class ---
+    lines.append("## Claims funnel")
+    n_recs = n_specs = 0
+    for lp in ledgers:
+        for r in tail_jsonl(lp, 500):
+            n_recs += 1
+            n_specs += len(r.get("method_specs") or [])
+    lines.append(f"- scout records: {n_recs} -> method_specs: {n_specs}")
+    n_evals = n_cand = 0
+    vdist = {}
+    if cyc_dir.is_dir():
+        for cf in cyc_dir.glob("*.json"):
+            try:
+                cyc = json.loads(cf.read_text())
+            except Exception:
+                continue
+            for e in cyc.get("evals", []):
+                n_evals += 1
+                for d in e.get("datasets", []):
+                    v = d.get("verdict") or d.get("status") or "?"
+                    vdist[v] = vdist.get(v, 0) + 1
+                    if v == "candidate":
+                        n_cand += 1
+    lines.append(f"- evals: {n_evals} -> dataset verdicts: {vdist}")
+    lines.append(f"- candidate verdicts: {n_cand} "
+                 "(pre-replication; unreplicated marked separately)")
+    lines.append("")
+
     # --- analyst queue ---
     aq_path = ROOT / "var" / "analyst_queue.json"
     lines.append("## Analyst queue")
