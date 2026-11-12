@@ -6617,8 +6617,9 @@ LIVE_IMPORTED_NON_ADVISORY: Tuple[Tuple[str, str], ...] = (
      "not an advisory service"),
     ("alpha_engine", "imported by execution/__init__.py — live "
      "dependency, sentiment stack not in the decision path"),
-    ("autonomous_financial_intelligence", "imported by "
-     "core/chainofthoughtreasoner.py — legacy compat, no decision role"),
+    ("autonomous_financial_intelligence", "archived to "
+     "_archive/ 2026-11-12 — zero live importers; LogicalVerifier "
+     "rescued to trading_bot/verification/"),
     ("ml", "imported by core/csc/model_engineering.py "
      "(confidence_calibration + data_leakage_guard) - canonical "
      "dependency, statistical analyzers attached via advisory seam; "

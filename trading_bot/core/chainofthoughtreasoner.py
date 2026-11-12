@@ -21,7 +21,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 try:
-    from trading_bot.autonomous_financial_intelligence.verified_reasoning.logical_verifier import (
+    from trading_bot.verification.logical_verifier import (
         ArgumentForm,
         LogicalVerifier,
         VerificationStatus,

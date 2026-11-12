@@ -1,5 +1,14 @@
 # AFI Package Audit — `trading_bot/autonomous_financial_intelligence/`
 
+> **ARCHIVED 2026-11-12**: package moved to
+> `trading_bot/_archive/autonomous_financial_intelligence/`.
+> `logical_verifier.py` was rescued to
+> `trading_bot/verification/logical_verifier.py` (canonical home,
+> imported by `core/chainofthoughtreasoner.py` via try/except).
+> Zero live importers remain; the archived
+> `verified_reasoning/__init__.py` still references the moved file
+> and will ImportError if loaded — intentional, dead code stays dead.
+
 Status: audit, written 2026-11-12. Scope: the 26-component package
 behind `AUTONOMOUS_FINANCIAL_INTELLIGENCE_README.md` (v2.0.0, ~16k LOC,
 33 files). Method: full wiring audit (git grep over tracked sources),

@@ -29,10 +29,12 @@ deliberately not autonomous — that is load-bearing, not a gap.
 
 Note (2026-11-12): `trading_bot/autonomous_financial_intelligence/` —
 the package behind `AUTONOMOUS_FINANCIAL_INTELLIGENCE_README.md` — is
-audited legacy: unwired except one soft import, unmeasured, and
-containing fabricated canonical-data paths. It is deprecated and its
-per-component disposition is in `DOCS/AFI_PACKAGE_AUDIT.md`. Nothing in
-this document depends on it.
+audited legacy and now ARCHIVED at
+`trading_bot/_archive/autonomous_financial_intelligence/` (its one live
+dependency, `LogicalVerifier`, was rescued to
+`trading_bot/verification/logical_verifier.py`). Per-component
+disposition is in `DOCS/AFI_PACKAGE_AUDIT.md`. Nothing in this document
+depends on it.
 
 ## 2. Layer-by-layer state
 

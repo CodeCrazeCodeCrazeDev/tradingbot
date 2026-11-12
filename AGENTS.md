@@ -387,13 +387,18 @@ review date and verify them against the current code before changing anything.
   coincident risk indicator, not a signal. Reports:
   var/macro_rates_venue_gate_lag{0,1}.json.
 - `trading_bot/autonomous_financial_intelligence/` audited
-  (2026-11-12, `DOCS/AFI_PACKAGE_AUDIT.md`): legacy/quarantined —
-  only live import is LogicalVerifier types via
-  chainofthoughtreasoner (try/except); data_canonicalizer +
-  fact_checker FABRICATE canonical prices (random.gauss/hardcoded);
-  README documents methods that don't exist; package now emits
-  DeprecationWarning. Disposition: extract logical_verifier, then
-  archive; destination remains DOCS/AUTONOMOUS_FI_INFRASTRUCTURE.md.
+  (2026-11-12, `DOCS/AFI_PACKAGE_AUDIT.md`) and ARCHIVED to
+  `trading_bot/_archive/autonomous_financial_intelligence/`:
+  data_canonicalizer + fact_checker FABRICATE canonical prices
+  (random.gauss/hardcoded); README documents methods that don't
+  exist. `LogicalVerifier` was rescued to
+  `trading_bot/verification/logical_verifier.py` (stdlib-only,
+  self-contained) — chainofthoughtreasoner now imports it from
+  there (still try/except). Package has zero live importers;
+  `autonomous_superintelligence/verified_intelligence_integration.py`
+  is dead code whose AFI import now fails loudly on load (nothing
+  imports it). Canonical doc:
+  DOCS/AUTONOMOUS_FI_INFRASTRUCTURE.md.
 - M1 method->candidate loop built (2026-11-12):
   `trading_bot/core/csc/research/method_spec.py` — MethodSpec
   (spec_id/hypothesis/family/bounded params/provenance/falsification)
