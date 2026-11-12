@@ -86,6 +86,31 @@ def _scout_python() -> str:
     return sys.executable
 
 
+def _load_control() -> dict:
+    """Operator/CSC control surface: var/afi_control.json.
+    {"paused": bool, "disabled_stages": [names]}. Missing file =
+    all stages enabled (fail-open for research, which is advisory
+    by construction — no trading authority flows through here)."""
+    p = ROOT / "var" / "afi_control.json"
+    try:
+        return json.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        return {}
+
+
+def _stage_enabled(ctl: dict, name: str) -> bool:
+    if ctl.get("paused"):
+        return False
+    return name not in set(ctl.get("disabled_stages") or [])
+
+
+def _stage_run(ctl: dict, name: str, cmd: list, **kw):
+    """subprocess.run gated by operator control; None = skipped."""
+    if not _stage_enabled(ctl, name):
+        return None
+    return subprocess.run(cmd, **kw)
+
+
 def run_scout(query: str, sources: str, out_ledger: Path,
               timeout_s: int) -> dict:
     """Bounded scout subprocess; failure is recorded, never raised."""
@@ -496,11 +521,14 @@ def main() -> int:
             encoding="utf-8").splitlines())
             if ledger_path.exists() else 0)
 
+        ctl = _load_control()
         scout = {"ran": False}
-        if args.scout:
+        if args.scout and _stage_enabled(ctl, "scout"):
             scout = run_scout(query, args.sources, ledger_path,
                               args.scout_timeout)
             scout["ran"] = True
+        elif args.scout:
+            scout["skipped"] = "operator_control"
 
         harvested = harvest_specs(ledger_path, offset_before,
                                   args.max_specs)
@@ -557,8 +585,11 @@ def main() -> int:
             qpath = ROOT / "var" / "analyst_queue.json"
             queue = (json.loads(qpath.read_text())
                      if qpath.exists() else {})
-            esc_specs = watch_escalation_specs(queue,
-                                               args.watch_recheck)
+            esc_specs = (watch_escalation_specs(queue,
+                                                args.watch_recheck)
+                         if _stage_enabled(ctl, "escalation") else [])
+            _mb = (args.mutation_budget
+                   if _stage_enabled(ctl, "mutations") else 0)
             have = {e.get("spec_id") for e in evals}
             for sd in esc_specs:
                 sid = sd.get("spec_id")
@@ -599,8 +630,8 @@ def main() -> int:
             # the same near-misses — new candidates, full eval.
             mut_count = 0
             for sd in esc_specs:
-                for ms in mutation_specs(sd, args.mutation_budget):
-                    if mut_count >= args.mutation_budget:
+                for ms in mutation_specs(sd, _mb):
+                    if mut_count >= _mb:
                         break
                     msid = ms.get("spec_id")
                     if msid in have:
@@ -620,7 +651,7 @@ def main() -> int:
                             args.cost_floor_bps, args.segments,
                             args.margin_bps)})
                     mut_count += 1
-                if mut_count >= args.mutation_budget:
+                if mut_count >= _mb:
                     break
             if mut_count:
                 print(f"mutations: {mut_count} analyst-generated "
@@ -634,7 +665,7 @@ def main() -> int:
         # and moves the file to done/. Operator-submitted claims skip
         # the web trust gate because the operator IS the trust root.
         inbox = ROOT / "var" / "operator_claims"
-        if inbox.is_dir():
+        if inbox.is_dir() and _stage_enabled(ctl, "operator_claims"):
             done_dir = inbox / "done"
             for cf in sorted(inbox.glob("*.txt")) + \
                     sorted(inbox.glob("*.md")):
@@ -705,13 +736,13 @@ def main() -> int:
         # failure must not kill the loop.
         try:
             import subprocess
-            lo = subprocess.run(
+            lo = _stage_run(ctl, "live_outcomes",
                 [sys.executable,
                  str(ROOT / "scripts" / "live_outcome_report.py"),
                  "--all-soaks"],
                 cwd=str(ROOT), capture_output=True, text=True,
                 timeout=120)
-            if lo.returncode == 0:
+            if lo is not None and lo.returncode == 0:
                 tail = (lo.stdout or "").strip().splitlines()
                 if tail:
                     print(f"live_outcomes: {tail[-1]}")
@@ -724,12 +755,12 @@ def main() -> int:
         # fail-closed gates; advisory, failure must not kill loop.
         try:
             import subprocess
-            st = subprocess.run(
+            st = _stage_run(ctl, "self_train",
                 [sys.executable,
                  str(ROOT / "scripts" / "self_train_orchestrator.py")],
                 cwd=str(ROOT), capture_output=True, text=True,
                 timeout=30)
-            if st.returncode != 0:
+            if st is not None and st.returncode != 0:
                 print(f"self_train rc={st.returncode}: "
                       f"{(st.stderr or '')[-200:]}")
         except Exception as exc:  # noqa: BLE001
@@ -740,16 +771,16 @@ def main() -> int:
         # never executable). Cheap JSON scan; non-fatal.
         try:
             import subprocess
-            da = subprocess.run(
+            da = _stage_run(ctl, "dev_assist",
                 [sys.executable,
                  str(ROOT / "scripts" / "development_assist.py")],
                 cwd=str(ROOT), capture_output=True, text=True,
                 timeout=60)
-            if da.returncode == 0:
+            if da is not None and da.returncode == 0:
                 tail = (da.stdout or "").strip().splitlines()
                 if tail:
                     print(f"dev_assist: {tail[-1]}")
-            else:
+            elif da is not None:
                 print(f"dev_assist rc={da.returncode}: "
                       f"{(da.stderr or '')[-200:]}")
         except Exception as exc:  # noqa: BLE001
@@ -760,12 +791,12 @@ def main() -> int:
         # PromotionDecision stays operator-gated. Non-fatal.
         try:
             import subprocess
-            ge = subprocess.run(
+            ge = _stage_run(ctl, "genome_eval",
                 [sys.executable,
                  str(ROOT / "scripts" / "genome_evaluate.py")],
                 cwd=str(ROOT), capture_output=True, text=True,
                 timeout=60)
-            if ge.returncode == 0:
+            if ge is not None and ge.returncode == 0:
                 tail = (ge.stdout or "").strip().splitlines()
                 if tail:
                     print(f"genome_eval: {tail[-1]}")
@@ -778,12 +809,12 @@ def main() -> int:
         # kill the loop.
         try:
             import subprocess
-            ar = subprocess.run(
+            ar = _stage_run(ctl, "analyst",
                 [sys.executable, str(ROOT / "scripts" / "analyst_review.py")],
                 cwd=str(ROOT), capture_output=True, text=True, timeout=120)
-            if ar.returncode == 0:
+            if ar is not None and ar.returncode == 0:
                 print("analyst -> var/analyst_queue.json")
-            else:
+            elif ar is not None:
                 print(f"analyst rc={ar.returncode}: "
                       f"{(ar.stderr or '')[-200:]}")
         except Exception as exc:  # noqa: BLE001

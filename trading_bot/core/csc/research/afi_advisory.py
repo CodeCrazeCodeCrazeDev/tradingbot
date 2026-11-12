@@ -146,6 +146,14 @@ def afi_research_evidence(ctx: Mapping[str, Any]) -> dict:
                 "conditions_holding": holds.get(d, 0)}
             for d in domains}
 
+    # AFI control surface: var/afi_control.json — what the operator
+    # has paused/disabled. The CSC sees its own control levers.
+    ctl = _load("afi_control.json") or {}
+    if ctl:
+        out["afi_control"] = {"paused": bool(ctl.get("paused")),
+                              "disabled_stages":
+                              ctl.get("disabled_stages") or []}
+
     # Direction: neutral — research state informs, never directs
     out["direction"] = "NEUTRAL"
     out["advisory_only"] = True
