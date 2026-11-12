@@ -38,6 +38,11 @@ from pathlib import Path
 
 import numpy as np
 
+try:  # scripts/ on sys.path when run as a file, repo root under pytest
+    from scripts.edge_baseline import quarantine_flags
+except ImportError:
+    from edge_baseline import quarantine_flags
+
 OUT = Path("var/methods/ledger.jsonl")
 
 # --- bounded parameter envelope (Level-1 candidate space) -------------------
@@ -241,6 +246,18 @@ def main() -> int:
             rec.update(verdict="REJECTED", reason=why)
             print(f"REJECTED  {why}")
         else:
+            qf = quarantine_flags(spec["db"], spec["symbol"], spec["tf"])
+            qf2 = (quarantine_flags(spec["db"], spec["symbol2"], spec["tf"])
+                   if spec.get("symbol2") else None)
+            if (qf and qf["quarantined"]) or (qf2 and qf2["quarantined"]):
+                flags = (qf or qf2)["flags"]
+                rec.update(verdict="REJECTED",
+                           reason=f"quarantined: data_quality {flags} — "
+                                  f"repair is operator-gated")
+                print(f"REJECTED  quarantined {spec['symbol']}@"
+                      f"{spec['tf']} flags={flags}")
+                rows.append(rec)
+                continue
             a = load_closes(spec["db"], spec["symbol"], spec["tf"])
             b = (load_closes(spec["db"], spec["symbol2"], spec["tf"])
                  if spec.get("symbol2") else None)

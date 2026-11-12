@@ -30,7 +30,8 @@ sys.path.insert(0, str(ROOT))
 import numpy as np  # noqa: E402
 
 from scripts.edge_baseline import (  # noqa: E402
-    RULES, block_bootstrap_lcb, evaluate, load_bars, roll_spread_bps)
+    RULES, block_bootstrap_lcb, evaluate, load_bars, quarantine_flags,
+    roll_spread_bps)
 from scripts.edge_hypotheses import HYPOTHESES  # noqa: E402
 
 ALL_RULES = dict(RULES)
@@ -51,6 +52,11 @@ def segment_eval(closes, fn, horizon, seg_start, seg_end, cost_bps):
 def gate_combo(db_path: Path, symbol: str, timeframe: str,
                segments: int, horizon: int, margin: float,
                eval_frac: float, embargo: int) -> dict:
+    qf = quarantine_flags(db_path, symbol, timeframe)
+    if qf and qf["quarantined"]:
+        return {"status": "quarantined", "flags": qf["flags"],
+                "reason": "data_quality flags — repair is operator-gated",
+                "rules": {}}
     ts, bars = load_bars(db_path, symbol, timeframe)
     closes = bars[:, 3]
     n = len(closes)
