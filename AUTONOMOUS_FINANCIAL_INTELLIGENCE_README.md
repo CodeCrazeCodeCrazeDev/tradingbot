@@ -1,11 +1,14 @@
 # Autonomous Financial Intelligence Infrastructure
 
-> **STALE — do not code against this document (audit 2026-11-12).**
+> **ARCHIVED — do not code against this document (audit 2026-11-12).**
 > The APIs, metrics, and file tree below describe a system that is not
 > in the tree: the package orchestrators were rewritten to minimal
 > facades, every documented method is absent, and two modules fabricate
-> "canonical" market data. The package now emits a DeprecationWarning.
-> The real architecture and honest gap map is
+> "canonical" market data. The package itself now lives at
+> `trading_bot/_archive/autonomous_financial_intelligence/` (zero live
+> importers); its one live dependency, `LogicalVerifier`, was rescued
+> to `trading_bot/verification/logical_verifier.py`. The real
+> architecture and honest gap map is
 > `DOCS/AUTONOMOUS_FI_INFRASTRUCTURE.md`; the component-by-component
 > disposition is `DOCS/AFI_PACKAGE_AUDIT.md`.
 
