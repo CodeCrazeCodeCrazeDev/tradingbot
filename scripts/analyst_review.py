@@ -192,9 +192,29 @@ def main() -> int:
     for a in agg:
         counts[a["classification"]] += 1
 
+    # Alert digest: diff vs previous queue — unattended runs surface
+    # CHANGES (new live signals, classification moves), not just state.
+    prev = {}
+    pq = Path(args.out_queue)
+    if pq.exists():
+        try:
+            prev = {s.get("spec_id"): s.get("classification")
+                    for s in json.loads(pq.read_text())
+                    .get("specs", [])}
+        except Exception:
+            prev = {}
+    alerts = []
+    for a in agg:
+        old, new = prev.get(a["spec_id"]), a["classification"]
+        if old is None and new in ("WATCH", "PROMOTE_CANDIDATE"):
+            alerts.append(f"NEW {new}: {a['spec_id']} ({a['family']})")
+        elif old and old != new:
+            alerts.append(f"{old} -> {new}: {a['spec_id']}")
+    alerts = alerts[:20]
+
     queue = {"generated": __import__("datetime").datetime.now()
              .isoformat(timespec="seconds"),
-             "counts": dict(counts), "specs": agg}
+             "counts": dict(counts), "alerts": alerts, "specs": agg}
     Path(args.out_queue).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out_queue).write_text(json.dumps(queue, indent=2,
                                              default=str))
@@ -204,6 +224,10 @@ def main() -> int:
              f"specs tracked: {len(agg)}  "
              + "  ".join(f"{k}={v}" for k, v in sorted(counts.items())),
              ""]
+    if alerts:
+        lines.append("## Alerts")
+        lines += [f"- {x}" for x in alerts]
+        lines.append("")
     for a in agg:
         if a["classification"] == "DEAD" and not a["near_miss_datasets"]:
             continue  # keep the report focused on live signals

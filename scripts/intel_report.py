@@ -108,6 +108,8 @@ def main() -> int:
             lines.append(f"- generated {aq.get('generated')}: "
                          + ", ".join(f"{k}={v}" for k, v in
                                      sorted(counts.items())))
+            for al in (aq.get("alerts") or [])[:8]:
+                lines.append(f"- ALERT: {al}")
             live = [s for s in aq.get("specs", [])
                     if s.get("classification") != "DEAD"]
             if not live:
