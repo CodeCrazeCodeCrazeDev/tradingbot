@@ -391,6 +391,23 @@ def main() -> int:
         print(f"cycle {cycle_no}: query={query!r} scout_rc="
               f"{scout.get('rc')} specs={len(evals)} candidates={n_cand}")
         print(f"report -> {report}")
+
+        # Analyst stage: re-judge ALL accumulated hunter artifacts
+        # (this cycle + history + method_candidates) into the
+        # classification queue. Advisory; failure must not kill the
+        # loop.
+        try:
+            import subprocess
+            ar = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / "analyst_review.py")],
+                cwd=str(ROOT), capture_output=True, text=True, timeout=120)
+            if ar.returncode == 0:
+                print("analyst -> var/analyst_queue.json")
+            else:
+                print(f"analyst rc={ar.returncode}: "
+                      f"{(ar.stderr or '')[-200:]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"analyst skipped: {exc}")
         cycles_done += 1
 
         if args.interval_hours is None or args.once:
