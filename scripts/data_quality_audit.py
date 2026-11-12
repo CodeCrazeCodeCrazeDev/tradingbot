@@ -30,9 +30,11 @@ TF_MINUTES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60,
               "H4": 240, "D1": 1440, "W1": 10080,
               "1m": 1, "5m": 5, "15m": 15, "30m": 30,
               "1h": 60, "4h": 240, "1d": 1440}
-# extreme-return threshold scales with bar size: 0.5% is anomalous
-# intraday but normal daily; 5% flags only genuine spikes/splits
-EXTREME_RET_BY_TF = {"intraday": 0.005, "daily": 0.05,
+# extreme-return threshold scales with bar size AND asset vol: 0.5%
+# is anomalous on EURUSD M15 but ordinary on crypto 15m (DOGE 1h
+# legitimately prints 1339 of them, max 7%). 5% intraday flags only
+# genuine spikes/splices; daily/weekly unchanged.
+EXTREME_RET_BY_TF = {"intraday": 0.05, "daily": 0.05,
                      "weekly": 0.10}
 
 

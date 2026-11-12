@@ -31,11 +31,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 # Data-quality quarantine — var/data_quality.json (data_quality_audit.py)
-# flags series for splice/integrity classes. Structural defects and
-# extreme_ret storms quarantine a series: no verdict is emitted on
-# contaminated data, the flag set is recorded instead. Repair is the
-# operator-gated dedup_or_resync path (development_genomes.jsonl).
-QUARANTINE_EXTREME_RET = 50
+# flags series for splice/integrity classes. Only STRUCTURAL defects
+# quarantine a series (off_grid / non_monotonic / dup_ts): extreme_ret
+# counts |ret|>0.5% bars, which is ordinary volatility on crypto
+# (DOGE 1h: 1339 flags, max ret 7% — legit), so it stays advisory in
+# the flags but never quarantines alone. Repair is the operator-gated
+# dedup_or_resync path (development_genomes.jsonl).
 _QUALITY_CACHE = {}
 
 
@@ -62,8 +63,7 @@ def quarantine_flags(db_path, symbol, timeframe, quality_path=None):
                          ("off_grid", "non_monotonic", "extreme_ret", "dup_ts")}
                 quarantined = (flags["off_grid"] > 0
                                or flags["non_monotonic"] > 0
-                               or flags["dup_ts"] > 0
-                               or flags["extreme_ret"] >= QUARANTINE_EXTREME_RET)
+                               or flags["dup_ts"] > 0)
                 return {"flags": flags, "quarantined": quarantined}
     return None
 
