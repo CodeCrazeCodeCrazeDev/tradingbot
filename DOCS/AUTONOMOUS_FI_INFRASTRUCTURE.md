@@ -93,6 +93,25 @@ them — today they are separate tools.
   intended conservatism is an operator/governance call, not an agent
   one; recorded here so the funnel number is not misread as "the gate
   is too strict" when it may be "the wrong gate."
+- **Evidence pack 2026-11-13** (per-source scores from the ledger):
+  - arXiv n=38, all `document` mode: scores quantize to {40, 60, 75}
+    — docs(20)+license(20)+recent(20) is the entire signal set.
+    29/38 (76%) score 40 (<180d-cadence missing = papers >6mo old)
+    and die; 9 pass to HUMAN_APPROVAL_REQUIRED purely for being
+    recent+licensed, not better. The scorer cannot rank paper
+    quality at all — it is a binary recency check.
+  - github n=41: continuous scores 0.19–91.33; 30/41 (73%) fail.
+    For repos the signals mean something (tests/docs/cadence =
+    maturity); 24/41 were tagged `document` mode anyway (no code
+    samples fetched).
+  - So the gate is not specifically anti-paper by outcome (76% vs
+    73% fail rates) — it is *uninformative* about papers: pass/fail
+    tracks recency, not merit. Options for the operator call:
+    (a) documents bypass the maturity gate straight to human review
+        (they need it anyway; the `mode` tag already exists);
+    (b) a document-specific score (venue, citations, author
+        history — mostly unavailable offline);
+    (c) keep as-is (conservative: old papers never enter).
 
 ### L5 — Hypothesis → evaluation loop — THE MISSING LINK
 - Research engine can `evaluate_strategy` (positions vs baseline on
