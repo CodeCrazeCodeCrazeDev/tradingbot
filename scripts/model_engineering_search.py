@@ -161,8 +161,12 @@ def main() -> int:
                    "--out", str(ckpt.relative_to(ROOT))],
                   args.train_timeout, SEARCH / f"{tag}_train.log")
         rec["train_rc"] = tr.get("rc")
-        if tr.get("rc") != 0 or not ckpt.exists():
+        if tr.get("rc") != 0:
             rec["status"] = "train_failed"
+        elif not ckpt.exists():
+            # training completed but the save gate rejected it — a
+            # valid negative result, not a crashed run
+            rec["status"] = "gate_rejected"
             report["variants"].append(rec)
             print(f"[{i}] {tag}: train failed {tr}")
             continue

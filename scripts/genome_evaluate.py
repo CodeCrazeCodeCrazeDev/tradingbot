@@ -119,8 +119,12 @@ def _check(genome: dict) -> dict:
         me = _load("model_engineering_report.json") or {}
         for v in me.get("variants", []):
             if v.get("tag") == tag or tag in str(v.get("tag")):
-                return {"holds": True,
-                        "detail": f"status={v.get('status')} "
+                st = v.get("status")
+                # the condition is "variant fails to train" — a later
+                # report where it trains (or is honestly gate-rejected)
+                # clears it
+                return {"holds": st == "train_failed",
+                        "detail": f"status={st} "
                                   f"rv16={v.get('rv16_r2')}"}
         return {"holds": False, "detail": "variant not in report"}
 
