@@ -641,6 +641,11 @@ def main() -> int:
     ap.add_argument("--scout", action="store_true",
                     help="run internet_scout.py this cycle")
     ap.add_argument("--scout-ledger", default="var/ecie/scout_ledger.jsonl")
+    ap.add_argument("--backfill-ledger", action="store_true",
+                    help="harvest specs from the ENTIRE scout ledger "
+                         "instead of only post-scout records — one-shot "
+                         "catch-up for records predating the extractor "
+                         "seam; spec_ids dedupe downstream")
     ap.add_argument("--scout-timeout", type=int, default=600)
     ap.add_argument("--datasets",
                     default="market_data.db:EURUSD:M15",
@@ -687,9 +692,10 @@ def main() -> int:
             (now.timetuple().tm_yday + cycles_done) % len(queries)]
 
         ledger_path = Path(args.scout_ledger)
-        offset_before = (len(ledger_path.read_text(
-            encoding="utf-8").splitlines())
-            if ledger_path.exists() else 0)
+        offset_before = (0 if args.backfill_ledger else
+                         len(ledger_path.read_text(
+                             encoding="utf-8").splitlines())
+                         if ledger_path.exists() else 0)
 
         ctl = _load_control()
         scout = {"ran": False}
