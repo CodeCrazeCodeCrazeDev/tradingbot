@@ -26,7 +26,7 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -56,6 +56,33 @@ def _recent_series(out: Mapping[str, Any], n: int):
     return series[-n:] if n > 0 else series
 
 
+def _edge_series(out: Mapping[str, Any]) -> List[float]:
+    """Per-timestamp cross-sectional mean of (candidate_net - baseline_net).
+
+    This is the *relative* edge series — what actually decays when a
+    strategy's edge erodes, independent of market drift.
+    """
+    grouped: Dict[str, Dict[Any, Tuple[float, float]]] = {}
+    for row in out.get("bars") or []:
+        if not isinstance(row, dict):
+            continue
+        sym, ts = row.get("symbol"), row.get("timestamp")
+        cn, bn = row.get("candidate_net"), row.get("baseline_net")
+        if (isinstance(sym, str) and isinstance(ts, (int, float))
+                and isinstance(cn, (int, float)) and isinstance(bn, (int, float))):
+            grouped.setdefault(sym, {})[ts] = (float(cn), float(bn))
+    if not grouped:
+        return []
+    timeline = sorted(next(iter(grouped.values())))
+    series = []
+    for t in timeline:
+        diffs = [grouped[s][t][0] - grouped[s][t][1]
+                 for s in grouped if t in grouped[s]]
+        if diffs:
+            series.append(sum(diffs) / len(diffs))
+    return series
+
+
 def reassess_record(rec: Mapping[str, Any], frames: Mapping[str, Any],
                     *, recent_bars: int, cost_bps: float,
                     decay_ratio: float, min_bars: int) -> Dict[str, Any]:
@@ -73,21 +100,55 @@ def reassess_record(rec: Mapping[str, Any], frames: Mapping[str, Any],
         return {**base, "verdict": "NO_VERDICT",
                 "reason": "missing candidate_parameters or unknown family"}
     adapter = ADAPTERS[family]
+    incumbent = extra.get("incumbent_params")
     try:
         runner = PairedFamilyReplay(adapter, cost_bps=cost_bps,
                                     fraction=0.01)
-        # candidate_parameters is the full merged param dict; replaying it
-        # against itself isolates absolute candidate performance (the decay
-        # signal), which needs no incumbent reconstruction.
-        out = runner.run(dict(frames), baseline_params=dict(params),
-                         candidate_params=dict(params))
+        if incumbent:
+            # True candidate-vs-baseline edge: replay the archived
+            # incumbent against the archived candidate on recent data.
+            out = runner.run(dict(frames), baseline_params=dict(incumbent),
+                             candidate_params=dict(params))
+            mode = "relative"
+        else:
+            # Legacy records predate incumbent_params storage: replay the
+            # candidate against itself and fall back to absolute decay.
+            out = runner.run(dict(frames), baseline_params=dict(params),
+                             candidate_params=dict(params))
+            mode = "absolute"
     except Exception as exc:  # noqa: BLE001 - per-record isolation
         return {**base, "verdict": "NO_VERDICT", "reason": str(exc)}
+
+    if mode == "relative":
+        edge = _edge_series(out)
+        recent = edge[-recent_bars:] if recent_bars > 0 else edge
+        n = len(recent)
+        if n < min_bars:
+            return {**base, "verdict": "TOO_EARLY", "mode": mode,
+                    "reason": f"only {n} recent bars (< {min_bars})",
+                    "n_recent": n}
+        recent_edge_mean = sum(recent) / n
+        recent_net = net_return_of(recent)
+        mv = rec.get("metric_vector") or {}
+        arch_edge = mv.get("paired_mean_diff")
+        ratio = (recent_edge_mean / arch_edge
+                 if isinstance(arch_edge, (int, float)) and arch_edge else None)
+        result = {**base, "verdict": "HOLDING", "mode": mode,
+                  "n_recent": n, "recent_edge_mean": recent_edge_mean,
+                  "recent_net_return": recent_net,
+                  "archived_edge_mean": arch_edge, "decay_ratio": ratio}
+        if recent_edge_mean <= 0 or (ratio is not None and ratio < decay_ratio):
+            result["verdict"] = "DECAYED"
+            result["reason"] = (
+                "recent edge non-positive"
+                if recent_edge_mean <= 0 else
+                f"edge ratio {ratio:.2f} < {decay_ratio}")
+        return result
 
     recent = _recent_series(out, recent_bars)
     n = len(recent)
     if n < min_bars:
-        return {**base, "verdict": "TOO_EARLY",
+        return {**base, "verdict": "TOO_EARLY", "mode": mode,
                 "reason": f"only {n} recent bars (< {min_bars})",
                 "n_recent": n}
     recent_net = net_return_of(recent)
@@ -103,7 +164,7 @@ def reassess_record(rec: Mapping[str, Any], frames: Mapping[str, Any],
     ratio = (recent_mean / arch_mean
              if arch_mean not in (None, 0) else None)
 
-    result = {**base, "verdict": "HOLDING",
+    result = {**base, "verdict": "HOLDING", "mode": mode,
               "n_recent": n, "recent_net_return": recent_net,
               "recent_mean_net": recent_mean,
               "archived_mean_net": arch_mean, "decay_ratio": ratio}

@@ -248,23 +248,36 @@ class HypothesisEngine:
             if len(out) >= 4:
                 break
 
-        # Elite arm: replay the parameter values that previously earned
-        # eligibility on this family. Interleaved after the control arm so
-        # both are always represented in the ranked pool; the "[elite]" /
-        # "[control]" text tag is carried into the archive record, making
-        # the seed-vs-random experiment measurable after the fact.
+        # Elite arm: mutate around parameter values that earned
+        # eligibility on this family. The winning value itself is always
+        # "tried" (it was evaluated to win), so — like GA mutation around
+        # elite genes — we propose its immediate neighborhood instead.
+        # Interleaved after the control arm so both are represented in the
+        # ranked pool; the "[elite]"/"[control]" text tag is carried into
+        # the archive record, making the seed-vs-random experiment
+        # measurable after the fact.
         elite = self._elite_values(archive, incumbent_params)
         elite_out: List[Hypothesis] = []
         for param, values in elite.items():
-            incumbent = float(incumbent_params.get(param, sum(self.adapter.allowed[param]) / 2))
+            lo, hi = self.adapter.allowed[param]
+            incumbent = float(incumbent_params.get(param, sum((lo, hi)) / 2))
             for value in values[:2]:
-                params_key = tuple(sorted({**incumbent_params, param: value}.items()))
-                if params_key in tried:
-                    continue
-                elite_out.append(self._mk_hypothesis(
-                    f"{self.adapter.family}.{param} ->elite {value} improves "
-                    f"{gap.metric} in {gap.regime} regime",
-                    "elite", param, value, incumbent, gap))
+                for v2 in (value * 0.9, value * 1.1):
+                    v2 = max(lo, min(hi, v2))
+                    if isinstance(lo, int) and isinstance(hi, int):
+                        v2 = float(int(v2))
+                    if v2 == value or v2 == incumbent:
+                        continue
+                    params_key = tuple(sorted(
+                        {**incumbent_params, param: v2}.items()))
+                    if params_key in tried:
+                        continue
+                    elite_out.append(self._mk_hypothesis(
+                        f"{self.adapter.family}.{param} ~elite {value}->{v2} "
+                        f"improves {gap.metric} in {gap.regime} regime",
+                        "elite", param, v2, incumbent, gap))
+                    if len(elite_out) >= 4:
+                        break
                 if len(elite_out) >= 4:
                     break
             if len(elite_out) >= 4:
@@ -1103,6 +1116,7 @@ class RecursiveImprovementCycle:
             delta=verdict.get("delta") or {}, verdict=verdict["status"], role=role,
             regime_cell="all", trial_index=self._trial_counter,
             extra={"candidate_parameters": candidate_params,
+                   "incumbent_params": dict(self.incumbent_params),
                    "fingerprint": genome.fingerprint,
                    "transfer_class": classification,
                    "hypothesis": hyp.text})

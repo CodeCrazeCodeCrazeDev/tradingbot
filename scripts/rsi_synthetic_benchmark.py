@@ -69,34 +69,70 @@ def _frames(seed, n=160, edge=True):
     return SyntheticMarketGenerator(spec).generate()
 
 
-def run_cycle(seed, edge, workdir, verifier_key, sleep=False):
+# random_field must clear random_field_min (default 8) or the gate
+# fail-closes every candidate — keep field size >= min + margin.
+ROBUSTNESS_CFG = {"order_shuffles": 200, "perturbations": 4,
+                  "random_field": 12}
+
+
+def _arm_of(rec):
+    hyp = ((rec.get("extra") or {}).get("hypothesis")) or ""
+    if hyp.startswith("[elite]"):
+        return "elite"
+    if hyp.startswith("[control]"):
+        return "control"
+    return "untagged"
+
+
+def run_cycle(seed, edge, workdir, verifier_key, sleep=False,
+              robustness=None, cycles=1, sandbox_backend="subprocess"):
     frames = _frames(seed, edge=edge)
     contract = _contract(frames, 160)
     archive = ParetoArchive(Path(workdir) / f"a{seed}-{edge}.jsonl")
     memory = ImprovementMemory(str(Path(workdir) / f"m{seed}-{edge}.db"))
+    verifier = IndependentVerifier(key_path=verifier_key)
+    guard = ProtectedPathGuard()
+    # Robustness replays share the sandbox wall-clock; give them headroom.
+    wall = 90.0 if robustness else 25.0
     cycle = RecursiveImprovementCycle(
-        contract=contract,
-        verifier=IndependentVerifier(key_path=verifier_key), archive=archive,
-        memory=memory, guard=ProtectedPathGuard(), frames=frames,
+        contract=contract, verifier=verifier, archive=archive,
+        memory=memory, guard=guard, frames=frames,
         incumbent_params={"lookback": 100, "entry_threshold": 1.0},
         adapter=ADAPTERS["mean_reversion"],
         config=CycleConfig(run_transfer=False, max_candidates_per_cycle=4,
-                           wall_clock_s=25.0))
+                           wall_clock_s=wall, robustness=robustness,
+                           sandbox_backend=sandbox_backend))
+    decisions = []
+    for _ in range(cycles):
+        if sleep:
+            from trading_bot.recursive_self_improvement.sleep_cycle import (
+                SleepPhaseConfig, SleepPhaseRunner)
+            report = SleepPhaseRunner(
+                cycle=cycle,
+                config=SleepPhaseConfig(n_dream_scenarios=4, dream_bars=120,
+                                        dream_seed_base=90000 + seed)
+            ).run_sleep()
+            decisions.extend(report.decisions)
+        else:
+            decisions.extend(cycle.run_cycle())
+    card = RSIScorecard(archive, memory).compute()
     if sleep:
-        from trading_bot.recursive_self_improvement.sleep_cycle import (
-            SleepPhaseConfig, SleepPhaseRunner)
-        report = SleepPhaseRunner(
-            cycle=cycle,
-            config=SleepPhaseConfig(n_dream_scenarios=4, dream_bars=120,
-                                    dream_seed_base=90000 + seed)
-        ).run_sleep()
-        card = RSIScorecard(archive, memory).compute()
         card["dreams_generated"] = report.dreams_generated
         card["dreams_kept"] = report.dreams_kept
         card["param_weights"] = report.param_weights
-        return report.decisions, card
-    decisions = cycle.run_cycle()
-    return decisions, RSIScorecard(archive, memory).compute()
+    # Arm-level outcome tally: does elite seeding beat the control arm?
+    arms: dict = {}
+    for rec in archive.records:
+        if rec.get("kind") != "record":
+            continue
+        arm = _arm_of(rec)
+        bucket = arms.setdefault(arm, {"eligible": 0, "rejected": 0,
+                                       "insufficient": 0})
+        v = rec.get("verdict")
+        bucket["eligible" if v == "eligible_for_operator_review"
+               else "rejected" if v == "rejected" else "insufficient"] += 1
+    card["arm_breakdown"] = arms
+    return decisions, card
 
 
 def main() -> int:
@@ -108,6 +144,15 @@ def main() -> int:
                          "the baseline cycle and a sleep phase (dreams + "
                          "diversity-steered selection) so their machinery "
                          "metrics can be compared")
+    ap.add_argument("--robustness", action="store_true",
+                    help="enable the Algory-style robustness gates "
+                         "(order-shuffle + perturbation + random-field)")
+    ap.add_argument("--cycles", type=int, default=1,
+                    help="cycles per seed/edge on a shared archive — "
+                         ">1 lets the elite-seeding arm fire")
+    ap.add_argument("--sandbox-backend", default="subprocess",
+                    choices=["subprocess", "thread"],
+                    help="thread is faster for offline engineering runs")
     args = ap.parse_args()
 
     arms = ["baseline", "sleep"] if args.sleep else ["baseline"]
@@ -130,7 +175,10 @@ def main() -> int:
                 key = "edge" if edge else "no_edge"
                 for arm in arms:
                     decisions, card = run_cycle(
-                        seed, edge, tmp, str(key_path), sleep=(arm == "sleep"))
+                        seed, edge, tmp, str(key_path), sleep=(arm == "sleep"),
+                        robustness=ROBUSTNESS_CFG if args.robustness else None,
+                        cycles=args.cycles,
+                        sandbox_backend=args.sandbox_backend)
                     for d in decisions:
                         bucket = ("eligible" if d.status == "eligible_for_operator_review"
                                   else "rejected" if d.status == "rejected"
@@ -140,6 +188,7 @@ def main() -> int:
                         {"seed": seed, "decisions": len(decisions),
                          "eligible_rate": card["eligible_rate"],
                          "chain_valid": card["archive_chain_valid"],
+                         "arm_breakdown": card.get("arm_breakdown"),
                          **({"dreams_kept": card.get("dreams_kept"),
                              "param_weights": card.get("param_weights")}
                             if arm == "sleep" else {})})

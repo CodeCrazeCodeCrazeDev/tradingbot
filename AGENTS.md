@@ -21,8 +21,49 @@ Rules:
   only needed submodules; keep test files free of heavy top-level work.
 - Only bounded numeric parameters on allow-listed strategy families
   (`mean_reversion`, `momentum`, `stat_arb`) are valid Level-1 candidates.
-- Real market data: only `market_data.db` EURUSD 1,000 bars. Use
+- Real market data: `market_data.db` EURUSD/GBPUSD/USDJPY M15 (~65k
+  bars each, off-grid rows quarantined to `market_data_offgrid`),
+  H1/H4 deeper history; `fx_data.db`, `binance_data.db`,
+  `us_stocks.db` (adjusted), `dsc_data.db` (accruing). Use
   `trading_bot/evaluation/synthetic_market.py` for tests.
+  `scripts/rsi_real_benchmark.py` runs the Level-1 cycle on real
+  frames (timeframe-filtered `RealFrameSource`; `--tail-bars` /
+  `--offset-bars` for replication windows).
+
+### Algory-inspired additions (2026-11-13, audit: DOCS/ALGORY_INVESTIGATION.md)
+
+- `robustness_gates.py` — order-shuffle path fragility, parameter-
+  perturbation stability, and beat-random-field gates. Opt-in via
+  `CycleConfig.robustness` (off by default); perturbation/random-field
+  probes replay inside the sandboxed verifier report so they are
+  signature-covered, and `gate_report` downgrades eligible verdicts
+  post-hoc. Deterministic seeds from contract+trial.
+- `HypothesisEngine.generate` emits `[elite]`/`[control]` arm-tagged
+  hypotheses; elite = ±10% mutations around params that earned
+  `eligible_for_operator_review` (the winning value itself is always
+  "tried", so exact re-proposal is impossible under the single-param
+  contract). Arm tags land in archive `extra.hypothesis`.
+- `engine_v2` archive records now store `extra.incumbent_params`,
+  enabling true candidate-vs-baseline decay measurement.
+- `scripts/rsi_reassess.py` — REASSESS analog: replays live archive
+  members on the recent data tail → HOLDING/DECAYED/TOO_EARLY/
+  NO_VERDICT (relative edge mode when incumbent_params present,
+  absolute fallback for legacy records). Diagnostic only.
+- `runner.py BarCostModel` — per-bar `cost_bps` overrides, session-
+  break no-trade bars, rollover spread widening. NOTE: runner.py feeds
+  `candidate_code_hash()` — cost-model changes invalidate issued
+  contracts by design.
+- `PromotionLadder(soak_requirements={...})` — opt-in per-stage
+  accrued-cycle gates before signed authorization is honored
+  (incubation analog); `record_soak()` accrues evidence.
+- `venue_parity.py` + `scripts/rsi_parity_passport.py` — A–F parity
+  grade on aligned per-bar sim-vs-venue net series, worst symbol
+  governs. Bar-level proxy, not trade-level matching. Real MT5
+  plumbing (decision_log → per-bar venue equity) still needs Hermes
+  env + demo creds.
+- `scripts/dashboard.py` — crimson "command deck" reskin (CSS only).
+- `scripts/rsi_synthetic_benchmark.py` — `--robustness`, `--cycles`,
+  `--sandbox-backend` flags; `arm_breakdown` in output JSON.
 
 ## Test commands
 
@@ -130,6 +171,39 @@ python scripts/operator_cli.py --state-dir var/paper_run cancel-all
 python scripts/operator_cli.py --state-dir var/paper_run estop
 python scripts/operator_cli.py --state-dir var/paper_run reset-emergency
 python scripts/operator_cli.py --state-dir var/paper_run status
+
+# CSC-owned data acquisition (trading_bot/expansion/acquisition.py).
+# The CSC holds the collectors at csc.expansion_context.acquisition —
+# allow-listed specs only (crypto_orderflow daemon, sentiment/fx_ticks
+# oneshots), start/stop/measure, governor enforced every advisory cycle
+# (over-budget host stops daemons). Operator drives them through the
+# same durable control:acquire* keys the runner polls each cycle:
+python scripts/operator_cli.py --state-dir var/paper_run collect on
+python scripts/operator_cli.py --state-dir var/paper_run collect crypto_orderflow=on
+python scripts/operator_cli.py --state-dir var/paper_run collect crypto_orderflow=off
+python scripts/operator_cli.py --state-dir var/paper_run \
+  collect 'fx_ticks={"symbol":"EURUSD","day":"2026-10-02","hours":[8,9]}'
+# fx_ticks params are validated by the spec's param_builder BEFORE
+# spawn (symbol allow-list, YYYY-MM-DD day, hours 0..23). Other
+# oneshot collectors: news (GDELT->news_events, rate-limit heavy),
+# cot (CFTC TFF->cot_positions), fx_spread (ticks->dsc_spread),
+# articles (Google News RSS->news_articles, GDELT fallback),
+# trade_backfill (Binance aggTrades history->agg_trades, bounded
+# params: symbols/hours), crypto_derivs (Binance fapi funding +
+# long/short + taker-flow history->crypto_derivs.db, bounded
+# params: symbols/days/period), deribit (DVOL + option book-summary
+# -> derivs_options.db), onchain (CoinMetrics community metrics ->
+# onchain.db), speeches (Fed speeches RSS + body fetch ->
+# news_articles.body). GDELT + Google-News-link bodies are both
+# walled from this env — cb speeches are the working full-text
+# channel. Dukascopy point size is per-instrument —
+# JPY pairs decode at 1e-3, others 1e-5 (scale is symbol-derived,
+# sanity-checked; a magnitude heuristic silently corrupts JPY).
+# LearningFeed (trading_bot/expansion/learning.py) emits measured
+# per-source features as expansion_learning advisory each cycle and
+# persists var/expansion/learned/learned.json; sources that cannot
+# exist (FX consolidated book, live slippage, book history) are
+# listed in 'boundaries', never faked.
 
 # Read-only dashboard snapshot published to <state-dir>/snapshot.json;
 # optional GET-only server via --dashboard-port (binds localhost only)
@@ -334,6 +408,17 @@ review date and verify them against the current code before changing anything.
   `rv_vol_size_factor = clip(1/mult, 0.25, 1.0)` — P95 mult when
   quantiles are armed, mean mult otherwise. The forecast never raises
   size; risk service stays the sizing authority.
+- Operator control gates (2026-11-12): every session-added influence is
+  killable mid-run via durable `control:*` account_state keys, read once
+  per cycle, persisted/re-applied across restart — same channel as
+  `control:paused`. `operator_cli rv-forecast off` severs rvf_* emission
+  runner-side and resets the forecaster window (re-enable re-warms
+  ~32 bars); `rv-size off` opens the CSC sizing gate so the scalar
+  stops applying while the shadow forecast keeps logging (funnel
+  `rv_size_suppressed` counts blocked applications); `explore off`
+  halts exploratory probe promotion while preserving the remaining
+  budget count. Read failures keep the last known state — never
+  silently re-enable a coupling an operator killed.
 - Direction note (2026-11-07): the JEPA-latent world model produced no
   observable-predictive structure after two honest attempts; the
   verified local-model channel is multi-bar RV ratio + quantiles.
