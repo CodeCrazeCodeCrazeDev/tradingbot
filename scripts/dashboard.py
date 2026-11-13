@@ -32,15 +32,39 @@ def dashboard_status(snapshot, now=None):
         "freshness": "UNKNOWN" if age is None else "STALE" if age > 60 else "RECENT",
     }
 
-_HTML = """<!doctype html><meta charset=utf-8><title>CSC Dashboard</title>
+_HTML = """<!doctype html><meta charset=utf-8><title>CSC // COMMAND DECK</title>
 <style>
-body{background:#0d1117;color:#c9d1d9;font-family:Consolas,monospace;
-margin:24px;font-size:14px}
-h1{color:#58a6ff;font-size:18px} h2{color:#8b949e;font-size:14px;
-margin:18px 0 4px} table{border-collapse:collapse}
-td{padding:2px 14px 2px 0;border-bottom:1px solid #21262d}
-td:first-child{color:#8b949e}.big{font-size:22px;color:#f0f6fc}
-.ok{color:#3fb950}.warn{color:#d29922}.bad{color:#f85149}
+:root{--bg:#060709;--panel:#0c0e13;--line:#1d212b;--ink:#c8d0dc;
+--dim:#5d6675;--crimson:#ff2d55;--crimson-dim:#7a1f30;--amber:#ffb020;
+--green:#2ee6a8;--red:#ff4d5e}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);
+font-family:Consolas,'JetBrains Mono',monospace;margin:0;padding:28px 32px;
+font-size:14px;line-height:1.5;
+background-image:radial-gradient(1200px 500px at 50% -10%,#14060b 0%,transparent 60%),
+repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.012) 3px 4px)}
+h1{color:var(--crimson);font-size:17px;letter-spacing:.35em;
+text-transform:uppercase;margin:0 0 6px;
+text-shadow:0 0 18px rgba(255,45,85,.45)}
+h1::before{content:"";display:inline-block;width:9px;height:9px;
+background:var(--crimson);border-radius:50%;margin-right:14px;
+box-shadow:0 0 10px var(--crimson);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+h2{color:var(--dim);font-size:11px;letter-spacing:.3em;
+text-transform:uppercase;margin:26px 0 10px;padding-left:12px;
+border-left:3px solid var(--crimson-dim)}
+table{border-collapse:separate;border-spacing:0;width:100%;
+max-width:860px;background:var(--panel);border:1px solid var(--line);
+border-radius:6px;overflow:hidden}
+td{padding:7px 16px;border-bottom:1px solid var(--line);font-size:13px}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--dim);letter-spacing:.04em}
+.big{font-size:24px;color:#f4f6fa;letter-spacing:.06em;margin:14px 0 4px;
+text-shadow:0 0 24px rgba(255,45,85,.25)}
+.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
+.deck-tag{display:inline-block;color:var(--crimson);border:1px solid var(--crimson-dim);
+border-radius:3px;padding:1px 8px;font-size:10px;letter-spacing:.25em;
+margin-left:12px;vertical-align:middle}
 </style>
 <div id=x>loading…</div>
 <script>
@@ -50,7 +74,7 @@ const f=s.funnel||{};const c=s.control||{};
 const d=s._dashboard||{};
 const esc=v=>String(v??'unknown').replace(/[&<>"']/g,
  ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-let h='<h1>CSC Snapshot — '+ esc(s.symbol||'?') +' '+ esc(s.data_timeframe||'')
+let h='<h1>CSC // DECK<span class=deck-tag>LIVE FEED</span> — '+ esc(s.symbol||'?') +' '+ esc(s.data_timeframe||'')
 +' <span class="warn">'+ esc(s.mode||'') +'</span></h1>';
 h+='<div class=big>cycles: '+(s.cycles??'—')+
 ' | trading permission: '+esc(d.trading)+
