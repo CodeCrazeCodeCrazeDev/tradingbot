@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import math
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -138,6 +139,33 @@ class PairedStrategyReplay:
         return _diagnostic_result(symbol, rows)
 
 
+@dataclass(frozen=True)
+class BarCostModel:
+    """Per-bar cost/session structure for paired replays.
+
+    Algory-changelog analogs made explicit and serializable (the model is
+    built inside the sandboxed verifier, so it must be plain data):
+
+    - ``per_bar_bps``: absolute cost override per bar index — the
+      "spread measured per hour" case where the cost is not a scalar.
+    - ``blocked_bars``: session-break / market-closed bars where the
+      strategy may not change position (turnover is forced to zero and
+      the held position simply rides through the break).
+    - ``rollover_bars`` + ``rollover_mult``: rollover-hour spread
+      widening applied to that bar's turnover cost.
+
+    Every emitted ``cost_bps`` must still fall inside the contract's
+    ``[min_cost_bps, max_cost_bps]`` band — widening models belong inside
+    the band the operator contracted for.
+    """
+
+    base_bps: float
+    per_bar_bps: Tuple[float, ...] = ()
+    blocked_bars: Tuple[int, ...] = ()
+    rollover_bars: Tuple[int, ...] = ()
+    rollover_mult: float = 1.0
+
+
 class PairedFamilyReplay:
     """Paired incumbent/candidate replay for any allow-listed adapter.
 
@@ -148,12 +176,30 @@ class PairedFamilyReplay:
     the position changes. Costs are explicit and identical for both sides.
     """
 
-    def __init__(self, adapter: Any, cost_bps: float, fraction: float = 0.01) -> None:
+    def __init__(self, adapter: Any, cost_bps: float, fraction: float = 0.01,
+                 cost_model: Optional[BarCostModel] = None) -> None:
         if not math.isfinite(cost_bps) or cost_bps <= 0 or not 0 < fraction <= 1:
             raise ValueError("positive cost and bounded exposure required")
+        if cost_model is not None:
+            if not math.isfinite(cost_model.base_bps) or cost_model.base_bps <= 0:
+                raise ValueError("cost model base_bps must be positive")
+            if not math.isfinite(cost_model.rollover_mult) or cost_model.rollover_mult < 1.0:
+                raise ValueError("rollover_mult must be >= 1.0")
         self.adapter = adapter
         self.cost_bps = float(cost_bps)
         self.fraction = float(fraction)
+        self.cost_model = cost_model
+        self._blocked = frozenset(cost_model.blocked_bars) if cost_model else frozenset()
+        self._rollover = frozenset(cost_model.rollover_bars) if cost_model else frozenset()
+
+    def _bar_cost(self, i: int) -> float:
+        m = self.cost_model
+        if m is None:
+            return self.cost_bps
+        cost = m.per_bar_bps[i] if i < len(m.per_bar_bps) else m.base_bps
+        if i in self._rollover:
+            cost *= m.rollover_mult
+        return float(cost)
 
     def _groups(self, frames: Dict[str, Any]) -> Dict[str, Any]:
         if self.adapter.pairs:
@@ -191,6 +237,15 @@ class PairedFamilyReplay:
         for label, group in self._groups(frames).items():
             primary = group[0] if self.adapter.pairs else group
             n = len(primary)
+            if self.cost_model is not None and self.cost_model.per_bar_bps \
+                    and len(self.cost_model.per_bar_bps) != n:
+                raise ValueError(
+                    "per_bar_bps length must match the frame's bar count")
+            if self._blocked or self._rollover:
+                bad = [i for i in (*self._blocked, *self._rollover)
+                       if i < 0 or i >= n]
+                if bad:
+                    raise ValueError(f"cost-model bar index out of range: {bad[0]}")
             timestamps = list(primary["timestamp"]) if "timestamp" in primary else list(range(n))
             strats = {
                 "baseline": self.adapter.build(baseline_params),
@@ -206,18 +261,21 @@ class PairedFamilyReplay:
                     hist = group.iloc[:i]
                     ra = float(group["close"].iloc[i]) / float(group["open"].iloc[i]) - 1.0
                     rb = 0.0
+                bar_cost = self._bar_cost(i)
                 row: Dict[str, Any] = {
                     "symbol": label,
                     "timestamp": timestamps[i],
-                    "cost_bps": self.cost_bps,
+                    "cost_bps": bar_cost,
                 }
                 for name, strat in strats.items():
                     hedge = 1.0
                     position = prev[name]
                     # Position semantics: entry/exit actions set a target
                     # position; "hold"/no-directive preserves the position
-                    # rather than behaving like a close.
-                    if i >= min_hist:
+                    # rather than behaving like a close. Session-break bars
+                    # are no-trade windows: the directive is ignored so the
+                    # held position rides through with zero turnover.
+                    if i >= min_hist and i not in self._blocked:
                         directive, hedge = self._signal_dir(strat, hist)
                         if directive is not None:
                             position = directive
@@ -226,7 +284,7 @@ class PairedFamilyReplay:
                     exposure = self.fraction * abs(position)
                     leg = (ra - hedge * rb) if self.adapter.pairs else ra
                     gross = position * leg * exposure
-                    net = gross - turnover * self.cost_bps / 10000.0
+                    net = gross - turnover * bar_cost / 10000.0
                     row[f"{name}_gross"] = gross
                     row[f"{name}_turnover"] = turnover
                     row[f"{name}_exposure"] = exposure
