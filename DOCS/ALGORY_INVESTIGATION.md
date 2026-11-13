@@ -423,3 +423,40 @@ promotion staging** — not in math we already do better.
 *Internal references: `improvement_genome.py`, `rsi_loop.py`, `evaluation.py`,
 `anti_gaming.py`, `multiplicity.py`, `scorecard.py`, `engine_v2.py`,
 `sleep_cycle.py`; AGENTS.md RSI rules and MT5 venue quirks.*
+
+---
+
+## Post-implementation ablation (2026-11-13)
+
+All eight lessons were implemented in `trading_bot/recursive_self_improvement/`
+(+ `runner.py`, `scripts/`). Verification: `tests/rsi` 151/151,
+foundation regression 17/17.
+
+**Robustness-gate ablation** (`rsi_synthetic_benchmark.py --seeds 3
+--cycles 3 --sandbox-backend thread`, mean_reversion, 160-bar fixtures):
+
+| arm | edge eligible | edge rejected | no_edge eligible | no_edge rejected |
+|-----|---------------|---------------|------------------|------------------|
+| robustness OFF | 4/27 | 17 | 4/27 | 12 |
+| robustness ON  | 0/27 | 21 | 0/29 | 16 |
+
+Finding: at this fixture scale (160 bars, marginal planted edge) the
+gates reject **every** baseline-eligible candidate — the machinery works
+(fail-closed, deterministic, signature-covered probes) but the strictness
+is calibrated for real-data evidence, not toy fixtures. First run also
+exposed a config trap: `random_field < random_field_min` (default 8)
+fail-closes the whole gate — keep field size >= min. Recommendation:
+keep robustness OFF for synthetic ablations, ON for real-data cycles
+where the evidence budget supports it.
+
+**Elite-seeding arm**: verified firing after fixing a real bug — the
+winning param value is always "tried" (it was evaluated to win), so the
+arm now proposes ±10% neighborhood mutations around eligible params.
+Sample too small for a win-rate claim (2 elite evals in the check run);
+`arm_breakdown` in benchmark output enables larger-N measurement.
+
+**Known residual gaps**: venue parity is bar-level proxy (MT5 fill→
+per-bar-equity plumbing needs Hermes env + rotated demo creds);
+`rsi_reassess` relative mode requires post-change archive records
+(incumbent_params now stored); soak requirements default off pending
+operator policy.
