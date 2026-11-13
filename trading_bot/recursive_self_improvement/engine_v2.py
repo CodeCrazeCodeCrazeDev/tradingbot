@@ -184,6 +184,50 @@ class HypothesisEngine:
         seen = set()
         return [v for v in out if not (v in seen or seen.add(v))]
 
+    def _elite_values(self, archive: ParetoArchive,
+                      incumbent_params: Mapping[str, float]
+                      ) -> Dict[str, List[float]]:
+        """Parameter values that earned eligibility for this family — the
+        'Smart Mode' elite seed. Only ``eligible_for_operator_review``
+        records count; failed hypotheses never seed (Algory's rule that
+        only validated genes may breed)."""
+        out: Dict[str, List[float]] = {}
+        for rec in archive.records:
+            if (rec.get("kind") != "record"
+                    or rec.get("verdict") != "eligible_for_operator_review"
+                    or rec.get("strategy_family") != self.adapter.family):
+                continue
+            params = (rec.get("extra") or {}).get("candidate_parameters") or {}
+            for name, bounds in self.adapter.allowed.items():
+                val = params.get(name)
+                if (isinstance(val, (int, float)) and not isinstance(val, bool)
+                        and bounds[0] <= float(val) <= bounds[1]
+                        and float(val) != float(incumbent_params.get(name, val))):
+                    out.setdefault(name, [])
+                    if float(val) not in out[name]:
+                        out[name].append(float(val))
+        return out
+
+    def _mk_hypothesis(self, text: str, arm: str, domain_param: str,
+                       value: float, incumbent: float,
+                       gap: PerformanceGap) -> Hypothesis:
+        bigger = value > incumbent
+        return Hypothesis(
+            hypothesis_id=f"HYP-{uuid.uuid4().hex[:8]}",
+            text=f"[{arm}] {text}",
+            prediction=("net return rises while drawdown does not regress"
+                        if gap.metric == "net_return" else
+                        f"{gap.metric} improves without net-return regression"),
+            adverse_prediction=(f"turnover increases" if not bigger else
+                                f"abstain_rate or tail risk worsens"),
+            falsifier=(f"reject if paired net delta <= 0 or {gap.metric} "
+                       f"worsens beyond regression budget"),
+            domain=ImprovementDomain.TRADING_POLICY,
+            param=domain_param, value=value,
+            expected_gain=max(gap.severity, 0.05),
+            est_cost=200.0 * incumbent,
+        )
+
     def generate(self, gap: PerformanceGap, cause: RootCause,
                  incumbent_params: Mapping[str, float],
                  archive: ParetoArchive) -> List[Hypothesis]:
@@ -195,26 +239,44 @@ class HypothesisEngine:
                 params_key = tuple(sorted({**incumbent_params, param: value}.items()))
                 if params_key in tried:
                     continue
-                bigger = value > incumbent
-                text = (f"{self.adapter.family}.{param} {incumbent}->{value} improves "
-                        f"{gap.metric} in {gap.regime} regime")
-                out.append(Hypothesis(
-                    hypothesis_id=f"HYP-{uuid.uuid4().hex[:8]}",
-                    text=text,
-                    prediction=("net return rises while drawdown does not regress"
-                                if gap.metric == "net_return" else
-                                f"{gap.metric} improves without net-return regression"),
-                    adverse_prediction=(f"turnover increases" if not bigger else
-                                        f"abstain_rate or tail risk worsens"),
-                    falsifier=(f"reject if paired net delta <= 0 or {gap.metric} "
-                               f"worsens beyond regression budget"),
-                    domain=ImprovementDomain.TRADING_POLICY,
-                    param=param, value=value,
-                    expected_gain=max(gap.severity, 0.05),
-                    est_cost=200.0 * incumbent,
-                ))
+                out.append(self._mk_hypothesis(
+                    f"{self.adapter.family}.{param} {incumbent}->{value} improves "
+                    f"{gap.metric} in {gap.regime} regime",
+                    "control", param, value, incumbent, gap))
                 if len(out) >= 4:
-                    return out
+                    break
+            if len(out) >= 4:
+                break
+
+        # Elite arm: replay the parameter values that previously earned
+        # eligibility on this family. Interleaved after the control arm so
+        # both are always represented in the ranked pool; the "[elite]" /
+        # "[control]" text tag is carried into the archive record, making
+        # the seed-vs-random experiment measurable after the fact.
+        elite = self._elite_values(archive, incumbent_params)
+        elite_out: List[Hypothesis] = []
+        for param, values in elite.items():
+            incumbent = float(incumbent_params.get(param, sum(self.adapter.allowed[param]) / 2))
+            for value in values[:2]:
+                params_key = tuple(sorted({**incumbent_params, param: value}.items()))
+                if params_key in tried:
+                    continue
+                elite_out.append(self._mk_hypothesis(
+                    f"{self.adapter.family}.{param} ->elite {value} improves "
+                    f"{gap.metric} in {gap.regime} regime",
+                    "elite", param, value, incumbent, gap))
+                if len(elite_out) >= 4:
+                    break
+            if len(elite_out) >= 4:
+                break
+        if elite_out:
+            merged: List[Hypothesis] = []
+            for i in range(max(len(out), len(elite_out))):
+                if i < len(out):
+                    merged.append(out[i])
+                if i < len(elite_out):
+                    merged.append(elite_out[i])
+            out = merged
         return out
 
 
@@ -626,6 +688,7 @@ class IndependentVerifier:
         latency_ms: float,
         verifier_id: str,
         fraction: float = 0.01,
+        robustness_cfg: Optional[Mapping[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Re-run the paired replay and build the unsigned report.
 
@@ -633,6 +696,7 @@ class IndependentVerifier:
         process — attestation happens in the parent via ``sign()``.
         """
         from trading_bot.evaluation.synthetic_market import fingerprint_all
+        from .robustness_gates import build_robustness_evidence
 
         actual_hash = fingerprint_all(frames)
         if actual_hash != contract["dataset_hash"]:
@@ -650,6 +714,16 @@ class IndependentVerifier:
             for b in bars
         )
         from .candidate_adapters import candidate_code_hash, dependencies_hash
+
+        rcfg = dict(robustness_cfg or {})
+        robustness_block: Optional[Dict[str, Any]] = None
+        if (int(rcfg.get("perturbations", 0) or 0) > 0
+                or int(rcfg.get("random_field", 0) or 0) > 0):
+            robustness_block = build_robustness_evidence(
+                adapter=adapter, frames=frames, contract=contract,
+                incumbent_params=incumbent_params,
+                candidate_params=candidate_params, genome=genome,
+                trial_id=trial_id, cfg=rcfg)
 
         return {
             "schema_version": 2,
@@ -672,6 +746,7 @@ class IndependentVerifier:
             "risk_invariants_passed": invariants,
             "parameter_effect_verified": effect,
             "bars": bars,
+            "robustness": robustness_block,
         }
 
     def sign(self, report: Mapping[str, Any]) -> str:
@@ -690,6 +765,7 @@ class IndependentVerifier:
         trial_count: int,
         latency_ms: float,
         fraction: float = 0.01,
+        robustness_cfg: Optional[Mapping[str, Any]] = None,
     ) -> Tuple[Dict[str, Any], str]:
         report = self.replay_and_build_report(
             contract=contract, adapter=adapter, frames=frames,
@@ -697,7 +773,7 @@ class IndependentVerifier:
             candidate_params=candidate_params, genome=genome,
             trial_id=trial_id, trial_count=trial_count,
             latency_ms=latency_ms, verifier_id=self.verifier_id,
-            fraction=fraction)
+            fraction=fraction, robustness_cfg=robustness_cfg)
         # Stamp the custody-truthful attestation claim before signing so the
         # signature covers the claim itself.
         report["holdout_attested"] = self.attests_holdout
@@ -819,6 +895,11 @@ class CycleConfig:
     # "thread" = in-process deadline only, for environments where spawn is
     # unavailable. Thread isolation is NOT sufficient for hostile code.
     sandbox_backend: str = "subprocess"
+    # Optional robustness gates (off by default; extra replays share the
+    # sandbox wall-clock budget). Keys: order_shuffles, perturbations,
+    # random_field, order_block, order_max_bad_frac, perturbation_min,
+    # random_field_min — see robustness_gates.gate_report.
+    robustness: Optional[Mapping[str, Any]] = None
 
 
 class RecursiveImprovementCycle:
@@ -921,6 +1002,7 @@ class RecursiveImprovementCycle:
                 "latency_ms": (time.perf_counter() - started) * 1000.0,
                 "verifier_id": self.verifier.verifier_id,
                 "fraction": self.config.fraction,
+                "robustness_cfg": dict(self.config.robustness or {}),
             }
             outcome = sandbox.run_report(payload)
         else:
@@ -954,6 +1036,21 @@ class RecursiveImprovementCycle:
             genome, report, expected_contract_hash=self.contract_hash,
             holdout_queries_used=self._trial_counter,
             signature=signature, verifier_public_key=verifier_pubkey)
+
+        # Algory-style robustness gates: applied post-verdict on the signed
+        # report so protected evaluator files stay untouched. Only eligible
+        # verdicts are re-checked; a failure downgrades to rejected.
+        if verdict.get("status") == "eligible_for_operator_review":
+            from .robustness_gates import gate_report
+            rb_ok, rb_reason, rb_metrics = gate_report(
+                report, self.contract, self.config.robustness)
+            if rb_metrics:
+                verdict = {**verdict,
+                           "metrics": {**(verdict.get("metrics") or {}),
+                                       **rb_metrics}}
+            if not rb_ok:
+                verdict = {**verdict, "status": "rejected",
+                           "reason": f"robustness gate: {rb_reason}"}
 
         regime_deltas: Dict[str, float] = {}
         classification = "LOCAL"
