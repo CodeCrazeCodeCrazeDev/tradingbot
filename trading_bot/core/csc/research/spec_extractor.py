@@ -32,6 +32,10 @@ _TEMPLATES = [
      ("volatility regime", "vol expansion", "volatility expansion",
       "realized vol", "vol ratio", "volatility contraction",
       "regime-switching momentum")),
+    ("funding_fade",
+     ("funding rate", "funding carry", "perp funding",
+      "perpetual funding", "funding yield", "funding arbitrage",
+      "funding fade")),
     ("meanrev",
      ("mean reversion", "mean-reversion", "oversold", "overbought",
       "bollinger", "z-score", "z score", "revert to the mean",
@@ -185,7 +189,7 @@ def extract_specs(text: str, *, provenance: Optional[Dict[str, Any]] = None,
                            "matched_family": fam},
             "falsification": "rejected if any eval segment LCB5 <= 0 "
                              "or mean net <= 0 under declared cost",
-            "required_data": "close",
+            "required_data": FAMILIES[fam].get("data", "close"),
         })
         specs.append(spec)
         emitted.add(fam)
