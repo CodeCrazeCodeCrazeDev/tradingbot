@@ -49,7 +49,7 @@ from trading_bot.core.csc.research.method_spec import (  # noqa: E402
 from scripts.method_candidate import (funding_eval, lob_eval,  # noqa: E402
                                       pair_eval, resolve_auto_leg)
 from trading_bot.core.csc.research.spec_extractor import (  # noqa: E402
-    extract_specs)
+    extract_specs, is_finance_text)
 
 # finance-disambiguated: bare terms like "momentum crash" pull
 # crash-reconstruction papers, not trading methods
@@ -136,27 +136,74 @@ def run_scout(query: str, sources: str, out_ledger: Path,
                 "error": f"{type(e).__name__}: {e}"}
 
 
+def _eval_key(sd: dict):
+    """Eval-identity for harvest dedupe. Two records proposing the
+    same compiled rule are ONE experiment: hypothesis text, spec_id
+    and provenance differ but family + effective params (family
+    defaults merged, as compile_rule does) + effective required_data
+    + pair are identical, so the eval would be bit-identical.
+    Without this, N papers describing 'momentum lookback 10' burn N
+    eval budgets on one experiment."""
+    from trading_bot.core.csc.research.method_spec import FAMILIES
+    fam = FAMILIES.get(sd.get("family")) or {}
+    bounds = fam.get("bounds") or {}
+    merged = {k: v for k, v in
+              {**(fam.get("defaults") or {}),
+               **(sd.get("params") or {})}.items() if k in bounds}
+    req = sd.get("required_data") or fam.get("data", "close")
+    pair = sd.get("pair")
+    return (sd.get("family"),
+            json.dumps(merged, sort_keys=True, default=str),
+            req,
+            json.dumps(pair, sort_keys=True, default=str)
+            if pair else "")
+
+
 def harvest_specs(ledger_path: Path, since_offset: int,
                   max_specs: int):
     """New ledger lines -> extracted MethodSpecs. Records carry
     method_specs already when internet_scout ran the extractor;
-    we re-derive from description for older rows and dedupe."""
-    specs, seen = [], set()
+    we re-derive from description for older rows and dedupe.
+
+    Two filters keep the eval budget honest:
+      - finance-context gate: stored specs on records whose text
+        fails today's gate (anchor/denylist) are dropped — they
+        predate the gate and are not tradeable claims;
+      - eval-equivalence dedupe: specs compiling to the same rule
+        on the same data need are evaluated once.
+    Returns (specs, stats) where stats counts the drops."""
+    specs, seen, eval_seen = [], set(), set()
+    stats = {"eval_dupes": 0, "gate_skipped": 0}
     if not ledger_path.exists():
-        return specs
+        return specs, stats
     lines = ledger_path.read_text(encoding="utf-8").splitlines()
     for line in lines[since_offset:]:
         try:
             rec = json.loads(line)
         except json.JSONDecodeError:
             continue
+        # Stored method_specs bypass extract_specs — re-apply the
+        # context gate to the record text so pre-gate junk (crash
+        # logs, recipes) cannot enter eval via the ledger.
+        text = f"{rec.get('name') or ''}\n{rec.get('description') or ''}"
+        if not is_finance_text(text):
+            if rec.get("method_specs"):
+                stats["gate_skipped"] += len(rec["method_specs"])
+            continue
         for s in rec.get("method_specs") or []:
             key = s.get("spec_hash") or s.get("spec_id")
-            if key and key not in seen:
+            ekey = _eval_key(s)
+            if key and key in seen:
+                continue
+            if ekey in eval_seen:
+                stats["eval_dupes"] += 1
+                continue
+            if key:
                 seen.add(key)
-                specs.append({"spec": s, "record": {
-                    "name": rec.get("name"), "url": rec.get("url"),
-                    "final": rec.get("final")}})
+            eval_seen.add(ekey)
+            specs.append({"spec": s, "record": {
+                "name": rec.get("name"), "url": rec.get("url"),
+                "final": rec.get("final")}})
         # fallback: derive from description when the scout predates
         # the extractor wiring
         if not rec.get("method_specs") and rec.get("description"):
@@ -165,18 +212,23 @@ def harvest_specs(ledger_path: Path, since_offset: int,
                     provenance={"source": "scout_ledger_fallback",
                                 "url": rec.get("url")}):
                 key = spec.spec_hash
-                if key not in seen:
-                    seen.add(key)
-                    specs.append({"spec": {
-                        "spec_id": spec.spec_id, "family": spec.family,
-                        "params": spec.params, "spec_hash": spec.spec_hash,
-                        "hypothesis": spec.hypothesis[:200]},
-                        "record": {"name": rec.get("name"),
-                                   "url": rec.get("url"),
-                                   "final": rec.get("final")}})
+                sd = {"spec_id": spec.spec_id, "family": spec.family,
+                      "params": spec.params, "spec_hash": spec.spec_hash,
+                      "hypothesis": spec.hypothesis[:200]}
+                ekey = _eval_key(sd)
+                if key in seen or ekey in eval_seen:
+                    if ekey in eval_seen and key not in seen:
+                        stats["eval_dupes"] += 1
+                    continue
+                seen.add(key)
+                eval_seen.add(ekey)
+                specs.append({"spec": sd,
+                              "record": {"name": rec.get("name"),
+                                         "url": rec.get("url"),
+                                         "final": rec.get("final")}})
         if len(specs) >= max_specs:
             break
-    return specs[:max_specs]
+    return specs[:max_specs], stats
 
 
 # required_data='funding' specs can't run on the generic OHLCV
@@ -737,8 +789,11 @@ def main() -> int:
         elif args.scout:
             scout["skipped"] = "operator_control"
 
-        harvested = harvest_specs(ledger_path, offset_before,
-                                  args.max_specs)
+        harvested, hstats = harvest_specs(ledger_path, offset_before,
+                                          args.max_specs)
+        if hstats["eval_dupes"] or hstats["gate_skipped"]:
+            print(f"harvest: {hstats['eval_dupes']} eval-duplicate + "
+                  f"{hstats['gate_skipped']} gate-skipped specs dropped")
         evals = []
         for h in harvested:
             sd = h["spec"]
@@ -961,6 +1016,25 @@ def main() -> int:
         except Exception as exc:  # noqa: BLE001
             print(f"lob_collect skipped: {exc}")
 
+        # Data catalog stage: refresh var/data_catalog.json (~5s
+        # read-only probe) so scanner/operator surfaces see current
+        # coverage. Advisory; failure must not kill the loop.
+        # Disable via disabled_stages: "catalog".
+        try:
+            import subprocess
+            ct = _stage_run(ctl, "catalog",
+                [sys.executable,
+                 str(ROOT / "scripts" / "build_catalog.py")],
+                cwd=str(ROOT), capture_output=True, text=True,
+                timeout=120)
+            if ct is not None and ct.returncode == 0:
+                print("catalog -> var/data_catalog.json")
+            elif ct is not None:
+                print(f"catalog rc={ct.returncode}: "
+                      f"{(ct.stderr or '')[-200:]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"catalog skipped: {exc}")
+
         # Live-outcome stage: refresh probe-P&L evidence records so
         # the analyst judges the spine's own trading too. Advisory;
         # failure must not kill the loop.
@@ -1032,6 +1106,25 @@ def main() -> int:
                     print(f"genome_eval: {tail[-1]}")
         except Exception as exc:  # noqa: BLE001
             print(f"genome_eval skipped: {exc}")
+
+        # Institutional journal: append this cycle's decisions to
+        # var/decisions.jsonl — typed records with authority levels,
+        # evidence refs and realized outcomes. The replayable
+        # decision->outcome attribution layer. Non-fatal.
+        try:
+            import subprocess
+            jn = _stage_run(ctl, "journal",
+                [sys.executable,
+                 str(ROOT / "scripts" / "institution_journal.py"),
+                 "ingest"],
+                cwd=str(ROOT), capture_output=True, text=True,
+                timeout=60)
+            if jn is not None and jn.returncode == 0:
+                tail = (jn.stdout or "").strip().splitlines()
+                if tail:
+                    print(f"journal: {tail[-2].strip() if len(tail)>1 else tail[-1]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"journal skipped: {exc}")
 
         # Analyst stage: re-judge ALL accumulated hunter artifacts
         # (this cycle + history + method_candidates + live outcomes)
