@@ -109,11 +109,24 @@ def test_all_families_compile_with_defaults():
     for fam in FAMILIES:
         if fam == "stat_arb":
             continue  # pair family needs spec.pair — tested below
+        if fam == "funding_fade":
+            continue  # data family — fn(rate_bps), tested below
         spec = MethodSpec(spec_id=fam, hypothesis="h", family=fam)
         fn = compile_rule(spec)
         closes = _series("mr", n=250)
         vals = {fn(closes, i) for i in range(200, 249)}
         assert vals <= {-1, 0, 1}
+
+
+def test_funding_fade_requires_funding_data_and_maps_rate():
+    spec = MethodSpec(spec_id="ff", hypothesis="h", family="funding_fade")
+    with pytest.raises(SpecError, match="required_data"):
+        compile_rule(spec)
+    spec = MethodSpec(spec_id="ff", hypothesis="h", family="funding_fade",
+                      params={"min_funding_bps": 2.0},
+                      required_data="funding")
+    fn = compile_rule(spec)
+    assert fn(5.0) == -1 and fn(-5.0) == 1 and fn(1.0) == 0
 
 
 PAIR = {"db": "x.db", "symbol": "B", "timeframe": "D1"}
