@@ -169,6 +169,21 @@ def _funding_fade_rule(min_bps: float):
     return fn
 
 
+def _lob_imbalance_rule(imb_thresh: float):
+    """Position at a book snapshot: follow the depth imbalance when
+    |imbalance| clears imb_thresh, else flat. Signature is
+    fn(imbalance) -> -1/0/+1 where imbalance is (bid-ask)/(bid+ask)
+    depth within the spec's band — evaluated over LOB snapshots by
+    the required_data='lob' path, not on close bars."""
+    def fn(imbalance: float) -> int:
+        if imbalance > imb_thresh:
+            return 1
+        if imbalance < -imb_thresh:
+            return -1
+        return 0
+    return fn
+
+
 def _statarb_rule(window: int, z: float, hedge: float):
     """Pairs rule on ALIGNED series: spread = log(a) - hedge*log(b);
     fade z-score extremes. Returns fn2(a, b, i) -> -1/0/+1 where the
@@ -233,6 +248,17 @@ FAMILIES: Dict[str, Dict[str, Any]] = {
         "factory": lambda p: _funding_fade_rule(
             float(p["min_funding_bps"])),
         "data": "funding",
+    },
+    "lob_imbalance": {
+        "description": "follow top-of-book depth imbalance into the "
+                       "next mid move (required_data='lob' — L2 "
+                       "snapshots; taker cost = measured spread)",
+        "bounds": {"depth_bps": (2.0, 50.0),
+                   "imb_thresh": (0.05, 0.9)},
+        "defaults": {"depth_bps": 10.0, "imb_thresh": 0.2},
+        "factory": lambda p: _lob_imbalance_rule(
+            float(p["imb_thresh"])),
+        "data": "lob",
     },
     "vol_regime_momentum": {
         "description": "momentum only when short/long vol ratio expands",

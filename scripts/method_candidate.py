@@ -200,6 +200,69 @@ def funding_eval(spec, rule_fn, db, symbol, timeframe, cost_bps,
     return v
 
 
+def lob_eval(spec, rule_fn, ref, symbol, timeframe, cost_bps,
+             segments=3, eval_frac=0.40, embargo=2, margin_bps=0.0):
+    """required_data='lob' path: L2 snapshots from lob_data.db,
+    self-contained (mid + book in the same row — no external closes).
+    rule_fn(imbalance) -> position; per-step net = signed mid-to-mid
+    bps - taker cost (max of cost floor and MEASURED spread_bps) on
+    position changes. Imbalance is recomputed at spec.depth_bps from
+    the raw stored book, so mutations on the band are real variants."""
+    import math as _math
+
+    from scripts.collect_lob import DB as LOB_DB, load_lob  # noqa: E402
+
+    if not str(ref).startswith("lob:"):
+        return {"status": "no_lob_source", "dataset": str(ref)}
+    source = str(ref).split(":", 1)[1]
+    depth_bps = float(spec.params.get("depth_bps", 10.0))
+    snaps = load_lob(LOB_DB, source, symbol)
+    if len(snaps) < 30:
+        return {"status": "insufficient_snapshots",
+                "snapshots": len(snaps), "source": source,
+                "symbol": symbol}
+
+    nets = []
+    spreads = []
+    prev_pos = 0.0
+    held = 0
+    for i in range(len(snaps) - 1):
+        ts, mid, sp, book = snaps[i]
+        mid1 = snaps[i + 1][1]
+        bids = [(float(p), float(q)) for p, q in book.get("bids", [])]
+        asks = [(float(p), float(q)) for p, q in book.get("asks", [])]
+        lo = mid * (1 - depth_bps / 1e4)
+        hi = mid * (1 + depth_bps / 1e4)
+        bd = sum(q for p, q in bids if lo <= p <= mid)
+        ad = sum(q for p, q in asks if mid <= p <= hi)
+        imb = (bd - ad) / (bd + ad) if (bd + ad) > 0 else 0.0
+        pos = float(rule_fn(imb))
+        step = pos * _math.log(mid1 / mid) * 1e4 if mid > 0 else 0.0
+        if pos != prev_pos:
+            step -= max(cost_bps, sp)  # taker: full measured spread
+            spreads.append(sp)
+        if pos != 0.0:
+            held += 1
+        prev_pos = pos
+        nets.append(step)
+    if len(nets) < 10:
+        return {"status": "insufficient_windows",
+                "windows": len(nets)}
+
+    v = verdict_from_pnl(np.asarray(nets), segments, eval_frac,
+                         embargo, margin_bps,
+                         label=f"{symbol}:{source}")
+    v.update({
+        "mechanism": "order-book depth imbalance -> next mid move; "
+                     "taker cost = measured spread (not floor)",
+        "windows": len(nets), "snapshots": len(snaps),
+        "held_steps": held,
+        "median_spread_bps": round(
+            float(np.median(spreads)), 3) if spreads else None,
+        "net_bps_per_window": round(float(np.mean(nets)), 3)})
+    return v
+
+
 def pair_eval(spec, rule2, pair_ref, db, symbol, timeframe,
               horizon, cost_bps, segments, eval_frac, embargo,
               margin_bps):

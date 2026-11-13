@@ -109,8 +109,8 @@ def test_all_families_compile_with_defaults():
     for fam in FAMILIES:
         if fam == "stat_arb":
             continue  # pair family needs spec.pair — tested below
-        if fam == "funding_fade":
-            continue  # data family — fn(rate_bps), tested below
+        if fam in ("funding_fade", "lob_imbalance"):
+            continue  # data families — fn(rate|imb), tested below
         spec = MethodSpec(spec_id=fam, hypothesis="h", family=fam)
         fn = compile_rule(spec)
         closes = _series("mr", n=250)
@@ -127,6 +127,17 @@ def test_funding_fade_requires_funding_data_and_maps_rate():
                       required_data="funding")
     fn = compile_rule(spec)
     assert fn(5.0) == -1 and fn(-5.0) == 1 and fn(1.0) == 0
+
+
+def test_lob_imbalance_requires_lob_data_and_maps_imbalance():
+    spec = MethodSpec(spec_id="li", hypothesis="h", family="lob_imbalance")
+    with pytest.raises(SpecError, match="required_data"):
+        compile_rule(spec)
+    spec = MethodSpec(spec_id="li", hypothesis="h", family="lob_imbalance",
+                      params={"imb_thresh": 0.3, "depth_bps": 10.0},
+                      required_data="lob")
+    fn = compile_rule(spec)
+    assert fn(0.5) == 1 and fn(-0.5) == -1 and fn(0.1) == 0
 
 
 PAIR = {"db": "x.db", "symbol": "B", "timeframe": "D1"}

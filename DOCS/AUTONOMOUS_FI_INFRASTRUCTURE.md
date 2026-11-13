@@ -133,6 +133,16 @@ them — today they are separate tools.
   required_data='lob' eval path + an LOB feed exist — the
   required_data mechanism added for funding already provides the
   honest route (spec → needs_data → data_request).
+- **LOB path BUILT 2026-11-13**: `scripts/collect_lob.py` snapshots
+  top-20 books (binance depth, HL l2Book, keyless) into
+  `lob_data.db` with raw levels JSON; `lob_imbalance` family
+  (`required_data='lob'`, bounds depth_bps/imb_thresh); `lob_eval`
+  computes band imbalance from the raw book, charges taker cost =
+  max(floor, measured spread), runs the same segmented all-LCB gate;
+  LOB_DATASETS dispatch in the cycle; extractor template added.
+  Caveat: L2 has no history endpoint — the series builds forward
+  via the cycle's `lob_collect` stage, so `insufficient_snapshots`
+  is the honest verdict until ~200+ snapshots accrue per series.
 - **Gap**: scheduled `run_research_cycle` generates questions from
   internal uncertainty only; it does not consume scout output.
 

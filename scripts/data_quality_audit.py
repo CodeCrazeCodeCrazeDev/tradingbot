@@ -87,6 +87,35 @@ def audit_db(path: Path):
         con = sqlite3.connect(str(path))
         tabs = [r[0] for r in con.execute(
             "select name from sqlite_master where type='table'")]
+        if "lob_snapshots" in tabs:
+            # ms-epoch ts, irregular cadence — off_grid does not apply;
+            # structural flags only (dup_ts/non_monotonic) + extreme_ret
+            for src, sym in con.execute(
+                    "select source,symbol from lob_snapshots "
+                    "group by source,symbol").fetchall():
+                rows = con.execute(
+                    "select ts,mid from lob_snapshots where source=? "
+                    "and symbol=? order by rowid", (src, sym)).fetchall()
+                q = {"rows": len(rows), "off_grid": 0,
+                     "non_monotonic": 0, "extreme_ret": 0, "dup_ts": 0}
+                prev_t, prev_mid, seen = None, None, set()
+                for t, mid in rows:
+                    if t in seen:
+                        q["dup_ts"] += 1
+                    seen.add(t)
+                    if prev_t is not None and t < prev_t:
+                        q["non_monotonic"] += 1
+                    prev_t = t
+                    if prev_mid and mid:
+                        if abs(mid / prev_mid - 1.0) > \
+                                EXTREME_RET_BY_TF["intraday"]:
+                            q["extreme_ret"] += 1
+                    prev_mid = mid or prev_mid
+                q.update({"symbol": f"{src}:{sym}",
+                          "timeframe": "snap"})
+                entry["series"].append(q)
+            con.close()
+            return entry
         if "market_data" not in tabs:
             entry["error"] = "no market_data table"
             con.close()

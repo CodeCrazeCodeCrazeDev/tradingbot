@@ -46,7 +46,7 @@ from scripts.edge_baseline import (load_bars, quarantine_flags,  # noqa: E402
 from scripts.method_candidate import segmented_verdict  # noqa: E402
 from trading_bot.core.csc.research.method_spec import (  # noqa: E402
     PAIR_FAMILIES, SpecError, compile_rule)
-from scripts.method_candidate import (funding_eval,  # noqa: E402
+from scripts.method_candidate import (funding_eval, lob_eval,  # noqa: E402
                                       pair_eval)
 from trading_bot.core.csc.research.spec_extractor import (  # noqa: E402
     extract_specs)
@@ -190,6 +190,15 @@ FUNDING_DATASETS = [
     for s in ("BTC", "ETH", "SOL") for tf in ("15m", "1h")
 ]
 
+# required_data='lob' specs are self-contained: lob_data.db holds
+# mid + raw book per snapshot. ref encodes the venue as 'lob:<venue>'.
+LOB_DATASETS = [
+    ("lob:binance", s, "snap")
+    for s in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+] + [
+    ("lob:hyperliquid", s, "snap") for s in ("BTC", "ETH", "SOL")
+]
+
 
 def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                           cost_floor: float, segments: int,
@@ -219,10 +228,19 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                  "reason": str(e)}]
     out = []
     eval_datasets = (FUNDING_DATASETS
-                     if spec.required_data == "funding" else datasets)
+                     if spec.required_data == "funding" else
+                     LOB_DATASETS
+                     if spec.required_data == "lob" else datasets)
     for db, sym, tf in eval_datasets:
         try:
-            qf = quarantine_flags(db, sym, tf)
+            # LOB refs are 'lob:<venue>' — the audit records the
+            # series under lob_data.db as '<venue>:<symbol>'.
+            if str(db).startswith("lob:"):
+                qf = quarantine_flags(
+                    "lob_data.db", f"{str(db).split(':', 1)[1]}:{sym}",
+                    tf)
+            else:
+                qf = quarantine_flags(db, sym, tf)
             if qf and qf["quarantined"]:
                 out.append({"dataset": f"{db}:{sym}:{tf}",
                             "status": "quarantined",
@@ -248,6 +266,24 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                 else:
                     rec.update(status=v.get("status", "no_verdict"),
                                reason=str(v))
+                out.append(rec)
+                continue
+            if spec.required_data == "lob":
+                v = lob_eval(spec, rule_fn, db, sym, tf,
+                             cost_floor, segments, 0.40, 2, margin)
+                rec = {"dataset": f"{db}:{sym}:{tf}"}
+                if "verdict" in v:
+                    rec.update(verdict=v["verdict"],
+                               overall=v.get("overall"),
+                               segments=v["segments"],
+                               mechanism=v.get("mechanism"),
+                               windows=v.get("windows"),
+                               snapshots=v.get("snapshots"),
+                               median_spread_bps=v.get(
+                                   "median_spread_bps"))
+                else:
+                    rec.update(status=v.get("status", "no_verdict"),
+                               reason=str(v)[:160])
                 out.append(rec)
                 continue
             if spec.family in PAIR_FAMILIES:
@@ -868,6 +904,25 @@ def main() -> int:
         print(f"cycle {cycle_no}: query={query!r} scout_rc="
               f"{scout.get('rc')} specs={len(evals)} candidates={n_cand}")
         print(f"report -> {report}")
+
+        # LOB collection stage: one snapshot pass per cycle so the
+        # order-book time series accrues (snapshots are the scarce
+        # resource — L2 has no history endpoint). Advisory; failure
+        # must not kill the loop. Disable via disabled_stages:
+        # "lob_collect".
+        try:
+            import subprocess
+            lc = _stage_run(ctl, "lob_collect",
+                [sys.executable,
+                 str(ROOT / "scripts" / "collect_lob.py")],
+                cwd=str(ROOT), capture_output=True, text=True,
+                timeout=90)
+            if lc is not None and lc.returncode == 0:
+                tail = (lc.stdout or "").strip().splitlines()
+                if tail:
+                    print(f"lob_collect: {tail[-1]}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"lob_collect skipped: {exc}")
 
         # Live-outcome stage: refresh probe-P&L evidence records so
         # the analyst judges the spine's own trading too. Advisory;
