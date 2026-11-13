@@ -127,6 +127,79 @@ def verdict_from_pnl(pnl, n_segments, eval_frac, embargo,
             "verdict": "candidate" if passes else "rejected"}
 
 
+def funding_eval(spec, rule_fn, db, symbol, timeframe, cost_bps,
+                 segments=3, eval_frac=0.40, embargo=2, margin_bps=0.0):
+    """required_data='funding' path: funding prints (funding_data.db)
+    joined to the dataset's closes. rule_fn(rate_bps) -> position
+    (-1/0/+1); per-window net = funding income + signed drift - cost.
+    Returns the segmented all-LCB verdict PLUS the honest
+    mechanism decomposition — unhedged funding-signed directional,
+    not delta-neutral carry."""
+    import math as _math
+
+    from scripts.funding_carry_eval import (  # noqa: E402
+        FUNDING_DB, load_closes, load_funding, nearest_close)
+
+    name = Path(db).name
+    src = ("binance" if name.startswith("binance") else
+           "hyperliquid" if name.startswith("hl") else None)
+    if src is None:
+        return {"status": "no_funding_source",
+                "dataset": str(db)}
+    # funding_data.db stores venue-native symbols (binance BTCUSDT,
+    # hyperliquid BTC); market_data stores bare symbols (BTC)
+    fsym = (symbol if symbol.endswith("USDT") else symbol + "USDT") \
+        if src == "binance" else symbol
+    fr = load_funding(FUNDING_DB, src, fsym)
+    if len(fr) < 11:
+        return {"status": "insufficient_funding_prints",
+                "prints": len(fr), "source": src, "symbol": fsym}
+    dbpath = Path(db) if Path(db).is_absolute() else ROOT / db
+    series = load_closes(dbpath, symbol, timeframe)
+    if len(series) < 50 and symbol.endswith("USDT"):
+        series = load_closes(dbpath, symbol[:-4], timeframe)
+    if len(series) < 50:
+        return {"status": "insufficient_closes",
+                "closes": len(series)}
+    cadence = int(np.median(np.diff([t for t, _ in fr])))
+    tol_ms = max(cadence // 2, 15 * 60 * 1000)
+
+    drifts, carries, nets = [], [], []
+    skipped = 0
+    for i in range(len(fr) - 1):
+        t0, f = fr[i]
+        pos = float(rule_fn(float(f) * 1e4))
+        if pos == 0.0:
+            continue  # flat — not a trade, no cost
+        t1 = fr[i + 1][0]
+        p0 = nearest_close(series, t0, tol_ms)
+        p1 = nearest_close(series, t1, tol_ms)
+        if not p0 or not p1:
+            skipped += 1
+            continue
+        signed = _math.log(p1 / p0) * pos * 1e4
+        carry = abs(float(f)) * 1e4
+        drifts.append(signed)
+        carries.append(carry)
+        nets.append(carry + signed - cost_bps)
+    if len(nets) < 10:
+        return {"status": "insufficient_windows",
+                "windows": len(nets), "skipped": skipped}
+
+    v = verdict_from_pnl(np.asarray(nets), segments, eval_frac,
+                         embargo, margin_bps,
+                         label=f"{fsym}:{src}")
+    v.update({
+        "mechanism": "unhedged funding-signed directional — "
+                     "NOT delta-neutral carry",
+        "windows": len(nets), "skipped_no_close": skipped,
+        "funding_prints": len(fr), "cadence_ms": cadence,
+        "funding_bps_per_window": round(float(np.mean(carries)), 3),
+        "drift_bps_per_window": round(float(np.mean(drifts)), 3),
+        "net_bps_per_window": round(float(np.mean(nets)), 3)})
+    return v
+
+
 def pair_eval(spec, rule2, pair_ref, db, symbol, timeframe,
               horizon, cost_bps, segments, eval_frac, embargo,
               margin_bps):

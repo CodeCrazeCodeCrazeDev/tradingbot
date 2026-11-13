@@ -46,7 +46,8 @@ from scripts.edge_baseline import (load_bars, quarantine_flags,  # noqa: E402
 from scripts.method_candidate import segmented_verdict  # noqa: E402
 from trading_bot.core.csc.research.method_spec import (  # noqa: E402
     PAIR_FAMILIES, SpecError, compile_rule)
-from scripts.method_candidate import pair_eval  # noqa: E402
+from scripts.method_candidate import (funding_eval,  # noqa: E402
+                                      pair_eval)
 from trading_bot.core.csc.research.spec_extractor import (  # noqa: E402
     extract_specs)
 
@@ -209,6 +210,26 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                             "flags": qf["flags"],
                             "reason": "data_quality flags — repair is "
                                       "operator-gated (dedup_or_resync)"})
+                continue
+            if spec.required_data == "funding":
+                v = funding_eval(spec, rule_fn, db, sym, tf,
+                                 cost_floor, segments, 0.40, 2, margin)
+                rec = {"dataset": f"{db}:{sym}:{tf}",
+                       "windows": v.get("windows"),
+                       "cost_bps": round(cost_floor, 2)}
+                if "verdict" in v:
+                    rec.update(verdict=v["verdict"],
+                               overall=v.get("overall"),
+                               segments=v["segments"],
+                               mechanism=v.get("mechanism"),
+                               funding_bps_per_window=v.get(
+                                   "funding_bps_per_window"),
+                               drift_bps_per_window=v.get(
+                                   "drift_bps_per_window"))
+                else:
+                    rec.update(status=v.get("status", "no_verdict"),
+                               reason=str(v))
+                out.append(rec)
                 continue
             if spec.family in PAIR_FAMILIES:
                 v = pair_eval(spec, rule_fn, spec.pair, db, sym, tf,

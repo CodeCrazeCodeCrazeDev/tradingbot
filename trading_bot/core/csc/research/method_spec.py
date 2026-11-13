@@ -157,6 +157,18 @@ def _volmom_rule(vol_short: int, vol_long: int, vr_min: float,
 PAIR_FAMILIES = {"stat_arb"}
 
 
+def _funding_fade_rule(min_bps: float):
+    """Position at a funding print: fade the crowded side when
+    |rate_bps| clears min_bps, else flat. Signature is
+    fn(rate_bps) -> -1/0/+1 — evaluated over funding windows by
+    the required_data='funding' path, not on close bars."""
+    def fn(rate_bps: float) -> int:
+        if abs(rate_bps) < min_bps:
+            return 0
+        return -1 if rate_bps > 0 else 1
+    return fn
+
+
 def _statarb_rule(window: int, z: float, hedge: float):
     """Pairs rule on ALIGNED series: spread = log(a) - hedge*log(b);
     fade z-score extremes. Returns fn2(a, b, i) -> -1/0/+1 where the
@@ -212,6 +224,16 @@ FAMILIES: Dict[str, Dict[str, Any]] = {
                                            float(p["hedge"])),
         "pair": True,
     },
+    "funding_fade": {
+        "description": "fade the crowded side at each funding print "
+                       "(required_data='funding' — prints + aligned "
+                       "closes; unhedged directional, NOT carry)",
+        "bounds": {"min_funding_bps": (0.0, 20.0)},
+        "defaults": {"min_funding_bps": 0.0},
+        "factory": lambda p: _funding_fade_rule(
+            float(p["min_funding_bps"])),
+        "data": "funding",
+    },
     "vol_regime_momentum": {
         "description": "momentum only when short/long vol ratio expands",
         "bounds": {"vol_short": (5, 50), "vol_long": (vol_long_min := 20, 200),
@@ -262,6 +284,10 @@ def compile_rule(spec: MethodSpec) -> RuleFn:
             raise SpecError(
                 f"family {spec.family!r} is a PAIR family — spec.pair "
                 "must declare {db, symbol, timeframe} for the hedge leg")
+    if fam.get("data") and spec.required_data != fam["data"]:
+        raise SpecError(
+            f"family {spec.family!r} requires required_data="
+            f"{fam['data']!r} (got {spec.required_data!r})")
     return fam["factory"](merged)
 
 
