@@ -185,8 +185,13 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
     """Compile + segmented eval per dataset; honest per-dataset
     verdicts, no cross-dataset promotion."""
     from trading_bot.core.csc.research.method_spec import (
-        MethodSpec, spec_from_dict)
+        FAMILIES, MethodSpec, spec_from_dict)
     spec = spec_from_dict({**spec_dict,
+                           "required_data":
+                               spec_dict.get("required_data")
+                               or FAMILIES.get(
+                                   spec_dict.get("family"), {})
+                               .get("data", "close"),
                            "provenance": {**(spec_dict.get("provenance")
                                              or {}),
                                           "origin": "autonomous_cycle"}})
@@ -444,10 +449,16 @@ def mutation_specs(spec_dict: dict, max_mut: int) -> list:
     out = []
     for pname, (lo, hi) in bounds.items():
         cur = params.get(pname)
+        if cur is None:
+            cur = (fam.get("defaults") or {}).get(pname)
         if not isinstance(cur, (int, float)) or isinstance(cur, bool):
             continue
         for direction in (-0.2, 0.2):
             v = cur * (1 + direction)
+            if v == cur and cur == 0:
+                # multiplicative mutation is a no-op at zero —
+                # step off the bound span instead (still clamped)
+                v = (hi - lo) * 0.05 if direction > 0 else lo
             v = max(lo, min(hi, v))
             if v == cur or any(
                     m["params"].get(pname) == v for m in out):
@@ -466,7 +477,9 @@ def mutation_specs(spec_dict: dict, max_mut: int) -> list:
                                "origin": "analyst_mutation",
                                "parent": orig_id},
                 "falsification": spec_dict.get("falsification", ""),
-                "required_data": spec_dict.get("required_data", "close"),
+                "required_data":
+                    spec_dict.get("required_data")
+                    or fam.get("data", "close"),
                 "horizon_bars": spec_dict.get("horizon_bars", 1),
                 "pair": spec_dict.get("pair"),
             })
