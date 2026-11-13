@@ -7,17 +7,29 @@ One bounded, advisory pass per invocation:
   1. scout sweep   — optional internet_scout.py subprocess over the
                      day's rotating query (network, bounded timeout)
   2. spec harvest  — new scout ledger records -> extract_specs ->
-                     MethodSpecs (allow-listed families only)
+                     MethodSpecs (allow-listed families only);
+                     finance-gated + eval-equivalence deduped so the
+                     budget buys distinct experiments
   3. gate eval     — each spec compiled + segmented all-LCB eval on
-                     the configured datasets (in-process, no CSC)
-  4. report        — var/reports/YYYYMMDD.md + var/autonomous_cycle/
+                     the configured datasets (in-process, no CSC),
+                     with DIFFERENT_DATASET replication for candidates
+  4. escalation    — WATCH near-misses re-judged harder + bounded
+                     analyst mutations (var/analyst_queue.json)
+  5. operator claims — var/operator_claims/*.txt|md inbox -> eval ->
+                     var/method_candidates records
+  6. data requests — untestable specs file durable requests into
+                     var/data_requests.json (resolved when met)
+  7. report        — var/reports/YYYYMMDD.md + var/autonomous_cycle/
                      cycle_*.jsonl — what ran, what stopped where,
                      honest "no edge found yet" lines
+  8. stages        — lob_collect / catalog / live_outcomes /
+                     self_train / dev_assist / genome_eval / analyst,
+                     each gated by var/afi_control.json
 
 Zero authority by construction: this script can only propose and
 record. Promotion stays behind signed RSI evaluator /
 OperatorAuthorization. Run under .venv; scout subprocess needs
-network.
+network (auto-prefers the hermes env for sklearn).
 
 Usage:
     python scripts/autonomous_cycle.py --once \
@@ -274,6 +286,17 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                            "provenance": {**(spec_dict.get("provenance")
                                              or {}),
                                           "origin": "autonomous_cycle"}})
+    # AFII governance: intelligence proposes the evaluation, the
+    # deterministic kernel authorizes it. A denial is a recorded
+    # outcome, not an exception.
+    try:
+        from scripts.afii_governance import check_authorization
+        authz = check_authorization("alphaalgo", "spec_evaluation", 2)
+        if not authz.get("authorized"):
+            return [{"dataset": None, "status": "afii_denied",
+                     "reason": authz.get("reason")}]
+    except ImportError:
+        pass  # kernel absent: subsystem-internal authority still applies
     try:
         rule_fn = compile_rule(spec)
     except SpecError as e:
@@ -989,6 +1012,16 @@ def main() -> int:
                 print(f"data_requests: {n_res} resolved")
         except Exception as exc:  # noqa: BLE001
             print(f"data_requests skipped: {exc}")
+
+        # AFII capital accounting: this cycle's real resource load
+        # recorded as an obligation — eval-count units, not money.
+        try:
+            from scripts.afii_governance import record_capital
+            record_capital("alphaalgo", "obligation",
+                           float(len(evals)), "spec_evals",
+                           f"cycle {cycle_no} evaluation load")
+        except Exception:
+            pass
 
         cycle = {"ts": now.isoformat(), "cycle": cycle_no,
                  "query": query, "scout": scout, "evals": evals}
