@@ -113,6 +113,31 @@ them — today they are separate tools.
         history — mostly unavailable offline);
     (c) keep as-is (conservative: old papers never enter).
 
+## AFII governance layer (built 2026-11-13)
+
+Separates intelligence from authority at the infrastructure level:
+AI proposes and evaluates; a deterministic policy engine authorizes;
+independent monitors can halt.
+
+- `scripts/afii_governance.py` — deterministic kernel (no learned
+  components). `auth <sub> <class> <level>` returns authorized/denied
+  with a reason; never an exception path.
+- `var/afii/governance.json` — subsystem registry: alphaalgo active
+  at L2 (spec eval, collection, proposals, journal, lob_collect;
+  denied: promotion/repair/external/capital), aean registered at L0
+  until it produces measured evidence under this governance.
+- `var/afii/HALT` — independent monitor halt. Existence of the file
+  pauses every gated stage in `autonomous_cycle` (checked in
+  `_load_control`, overrides `afi_control.json`). Any monitor can
+  create it; only an operator removes it.
+- `var/afii/capital_ledger.jsonl` — append-only typed capital
+  records (allocation/obligation/reserve/release). Balances are
+  derived by summing, never stored — the treasuries-of-record
+  primitive for capital intelligence.
+- `var/decisions.jsonl` + `var/authority.json` — the institution
+  journal and subsystem-internal autonomy table (see
+  `scripts/institution_journal.py`).
+
 ### L5 — Hypothesis → evaluation loop — THE MISSING LINK
 - Research engine can `evaluate_strategy` (positions vs baseline on
   real bar returns) and self-replicate claims out-of-sample via

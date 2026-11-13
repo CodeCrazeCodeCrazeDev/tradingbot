@@ -97,9 +97,15 @@ def _load_control() -> dict:
     by construction — no trading authority flows through here)."""
     p = ROOT / "var" / "afi_control.json"
     try:
-        return json.loads(p.read_text()) if p.exists() else {}
+        ctl = json.loads(p.read_text()) if p.exists() else {}
     except Exception:
-        return {}
+        ctl = {}
+    # AFII independent monitor: var/afii/HALT overrides everything —
+    # a monitor can stop the intelligence without editing its config.
+    if (ROOT / "var" / "afii" / "HALT").exists():
+        ctl["paused"] = True
+        ctl["afii_halt"] = True
+    return ctl
 
 
 def _stage_enabled(ctl: dict, name: str) -> bool:
