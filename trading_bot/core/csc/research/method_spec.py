@@ -305,11 +305,14 @@ def compile_rule(spec: MethodSpec) -> RuleFn:
             merged["vol_short"] >= merged["vol_long"]:
         raise SpecError("vol_short must be < vol_long")
     if fam.get("pair"):
-        if not isinstance(spec.pair, dict) or not all(
-                spec.pair.get(k) for k in ("db", "symbol", "timeframe")):
+        auto = isinstance(spec.pair, dict) \
+            and spec.pair.get("mode") == "auto"
+        if not auto and (not isinstance(spec.pair, dict) or not all(
+                spec.pair.get(k) for k in ("db", "symbol", "timeframe"))):
             raise SpecError(
                 f"family {spec.family!r} is a PAIR family — spec.pair "
-                "must declare {db, symbol, timeframe} for the hedge leg")
+                "must declare {db, symbol, timeframe} for the hedge leg "
+                "or {'mode': 'auto'} for discovery-window leg selection")
     if fam.get("data") and spec.required_data != fam["data"]:
         raise SpecError(
             f"family {spec.family!r} requires required_data="

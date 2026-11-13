@@ -47,7 +47,7 @@ from scripts.method_candidate import segmented_verdict  # noqa: E402
 from trading_bot.core.csc.research.method_spec import (  # noqa: E402
     PAIR_FAMILIES, SpecError, compile_rule)
 from scripts.method_candidate import (funding_eval, lob_eval,  # noqa: E402
-                                      pair_eval)
+                                      pair_eval, resolve_auto_leg)
 from trading_bot.core.csc.research.spec_extractor import (  # noqa: E402
     extract_specs)
 
@@ -287,7 +287,18 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                 out.append(rec)
                 continue
             if spec.family in PAIR_FAMILIES:
-                v = pair_eval(spec, rule_fn, spec.pair, db, sym, tf,
+                pref = spec.pair
+                if isinstance(pref, dict) and pref.get("mode") == "auto":
+                    pref = resolve_auto_leg(db, sym, tf)
+                    if pref is None:
+                        out.append({"dataset": f"{db}:{sym}:{tf}",
+                                    "status": "no_leg",
+                                    "reason": "auto leg selection "
+                                              "found no candidate with "
+                                              "200+ aligned discovery "
+                                              "bars"})
+                        continue
+                v = pair_eval(spec, rule_fn, pref, db, sym, tf,
                               horizon, cost_floor, segments, 0.40, 20,
                               margin)
                 out.append({"dataset": f"{db}:{sym}:{tf}",
@@ -295,7 +306,12 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                             "cost_bps": round(cost_floor, 2),
                             "verdict": v.get("verdict", v.get("status")),
                             "overall": v.get("overall"),
-                            "segments": v.get("segments")})
+                            "segments": v.get("segments"),
+                            "hedge_leg": (f"{pref['symbol']}:{pref['db']}"
+                                         if isinstance(pref, dict)
+                                         else None),
+                            "leg_selection": pref.get("selection")
+                            if isinstance(pref, dict) else None})
                 continue
             ts, bars = load_bars(db, sym, tf)
         except Exception as e:
@@ -365,7 +381,22 @@ def resolve_data_requests(qpath: Path) -> int:
             continue
         need = str(r.get("need") or "")
         ok, how = False, None
-        if "funding" in need.lower():
+        if r.get("kind") == "spec_completion" \
+                and "hedge leg" in need.lower():
+            # resolved once pair={'mode':'auto'} compiles + selects
+            try:
+                from trading_bot.core.csc.research.method_spec import (
+                    compile_rule, spec_from_dict)
+                _sp = spec_from_dict({
+                    "spec_id": "_chk", "family": "stat_arb",
+                    "hypothesis": "_chk",
+                    "pair": {"mode": "auto"}})
+                compile_rule(_sp)
+                ok, how = True, "pair mode auto supported " \
+                               "(discovery-window leg selection)"
+            except Exception:
+                pass
+        elif "funding" in need.lower():
             fdb = ROOT / "funding_data.db"
             if fdb.exists():
                 try:

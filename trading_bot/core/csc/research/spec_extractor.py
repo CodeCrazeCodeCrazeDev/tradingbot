@@ -195,6 +195,11 @@ def extract_specs(text: str, *, provenance: Optional[Dict[str, Any]] = None,
             "falsification": "rejected if any eval segment LCB5 <= 0 "
                              "or mean net <= 0 under declared cost",
             "required_data": FAMILIES[fam].get("data", "close"),
+            # PAIR text rarely names concrete instruments — declare
+            # auto leg-selection rather than guessing a symbol; the
+            # evaluator picks on discovery data and records the choice.
+            **({"pair": {"mode": "auto"}}
+               if FAMILIES[fam].get("pair") else {}),
         })
         specs.append(spec)
         emitted.add(fam)

@@ -263,6 +263,45 @@ def lob_eval(spec, rule_fn, ref, symbol, timeframe, cost_bps,
     return v
 
 
+def resolve_auto_leg(db, symbol, timeframe, eval_frac=0.60):
+    """pair={'mode':'auto'} -> choose the hedge leg on DISCOVERY data
+    only: max |corr| of aligned log closes vs the primary over the
+    first eval_frac of bars. Selection is recorded, never hidden —
+    the eval tail stays out of the choice."""
+    import sqlite3 as _sq
+    dbpath = Path(db) if Path(db).is_absolute() else ROOT / db
+    con = _sq.connect(str(dbpath))
+    try:
+        cands = [r[0] for r in con.execute(
+            "select distinct symbol from market_data where timeframe=?",
+            (timeframe,)) if r[0] != symbol]
+    finally:
+        con.close()
+    ts, bars = load_bars(db, symbol, timeframe)
+    disc = int(len(bars) * eval_frac)
+    a_log = np.log(bars[:disc, 3])
+    best, best_corr = None, 0.0
+    for leg in cands:
+        try:
+            lts, lbars = load_bars(db, leg, timeframe)
+        except Exception:  # noqa: BLE001
+            continue
+        lmap = {t: float(c) for t, c in zip(lts, lbars[:, 3])}
+        b_log = np.array([lmap.get(t, np.nan)
+                          for t in ts[:disc]], dtype=float)
+        ok = np.isfinite(b_log) & np.isfinite(a_log)
+        if ok.sum() < 200:
+            continue
+        c = abs(float(np.corrcoef(a_log[ok], b_log[ok])[0, 1]))
+        if c > best_corr:
+            best, best_corr = leg, c
+    if best is None:
+        return None
+    return {"db": str(db), "symbol": best, "timeframe": timeframe,
+            "selection": f"auto: max |corr|={best_corr:.3f} on "
+                         f"discovery {disc} bars"}
+
+
 def pair_eval(spec, rule2, pair_ref, db, symbol, timeframe,
               horizon, cost_bps, segments, eval_frac, embargo,
               margin_bps):

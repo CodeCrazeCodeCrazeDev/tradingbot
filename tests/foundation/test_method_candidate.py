@@ -214,6 +214,11 @@ def test_statarb_spec_roundtrip_and_extractor():
     specs = extract_specs(
         "pairs trading cointegration forex z-score 2.0")
     assert specs and specs[0].family == "stat_arb"
-    # extracted stat_arb has NO pair -> compile_rule must reject
+    # extracted stat_arb declares pair={'mode':'auto'} — leg chosen
+    # on discovery data by the evaluator — and compiles
+    assert specs[0].pair == {"mode": "auto"}
+    compile_rule(specs[0])
+    # a hand-authored stat_arb with NO pair is still rejected
+    bare = MethodSpec(spec_id="bare", hypothesis="h", family="stat_arb")
     with pytest.raises(SpecError, match="spec.pair"):
-        compile_rule(specs[0])
+        compile_rule(bare)
