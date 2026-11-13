@@ -10,7 +10,9 @@ that corrupt verdicts:
   off_grid      timestamp not on the timeframe boundary
                 (fractional seconds or minute % tf_minutes != 0)
   non_monotonic timestamp order violations
-  extreme_ret   |close-to-close return| > 0.5% (news/gap vs splice)
+  extreme_ret   |close-to-close return| > max(MIN_ABS,
+                EWMA_K * rolling sigma) — vol-normalized so genuine
+                crypto spikes don't flag as splices
   dup_ts        duplicate timestamps
 
 Output: var/data_quality.json + console summary, worst series first.
@@ -30,12 +32,16 @@ TF_MINUTES = {"M1": 1, "M5": 5, "M15": 15, "M30": 30, "H1": 60,
               "H4": 240, "D1": 1440, "W1": 10080,
               "1m": 1, "5m": 5, "15m": 15, "30m": 30,
               "1h": 60, "4h": 240, "1d": 1440}
-# extreme-return threshold scales with bar size AND asset vol: 0.5%
-# is anomalous on EURUSD M15 but ordinary on crypto 15m (DOGE 1h
-# legitimately prints 1339 of them, max 7%). 5% intraday flags only
-# genuine spikes/splices; daily/weekly unchanged.
-EXTREME_RET_BY_TF = {"intraday": 0.05, "daily": 0.05,
-                     "weekly": 0.10}
+# extreme_ret is vol-normalized: a return is anomalous when it
+# exceeds K local sigmas (EWMA of past returns, so the spike can't
+# inflate its own threshold) with a sanity floor below which nothing
+# is ever flagged and a cap so dead-calm series can't produce
+# absurd thresholds. Fixed bps thresholds can't work across FX M15
+# (sigma ~0.04%) and DOGE 15m (sigma ~0.8%) simultaneously.
+EXTREME_K = 8.0          # sigma multiple
+EXTREME_MIN_ABS = 0.002  # 20bps — never flag smaller moves
+EXTREME_CAP = 0.15       # never require >15% for intraday-ish bars
+EWMA_LAMBDA = 0.94       # RiskMetrics decay
 
 
 def _parse_ts(s):
@@ -45,18 +51,23 @@ def _parse_ts(s):
         return None
 
 
+def _extreme_threshold(var):
+    """bps-fraction threshold from EWMA variance of past returns."""
+    sigma = var ** 0.5 if var and var > 0 else 0.0
+    return min(EXTREME_CAP, max(EXTREME_MIN_ABS,
+                                EXTREME_K * sigma))
+
+
 def audit_series(rows, tf):
     """rows: [(timestamp, close)] ordered by timestamp."""
     tf_min = TF_MINUTES.get(tf)
     # minute-modulus alignment only applies intraday — daily/weekly
     # bars legitimately sit at session times, not midnight-UTC grid
     grid_check = bool(tf_min and tf_min < 1440)
-    extreme = (EXTREME_RET_BY_TF["daily"] if tf_min and tf_min >= 1440
-               else EXTREME_RET_BY_TF["weekly"] if tf_min and tf_min >= 10080
-               else EXTREME_RET_BY_TF["intraday"])
     out = {"rows": len(rows), "off_grid": 0, "non_monotonic": 0,
            "extreme_ret": 0, "dup_ts": 0}
     prev_dt, prev_close = None, None
+    var = None          # EWMA variance of returns (pre-return state)
     seen = set()
     for raw, close in rows:
         if raw in seen:
@@ -74,9 +85,11 @@ def audit_series(rows, tf):
                 out["non_monotonic"] += 1
             prev_dt = dt
         if prev_close and close:
-            ret = abs(close / prev_close - 1.0)
-            if ret > extreme:
+            ret = close / prev_close - 1.0
+            if abs(ret) > _extreme_threshold(var):
                 out["extreme_ret"] += 1
+            var = (ret * ret if var is None
+                   else EWMA_LAMBDA * var + (1 - EWMA_LAMBDA) * ret * ret)
         prev_close = close or prev_close
     return out
 
@@ -99,6 +112,7 @@ def audit_db(path: Path):
                 q = {"rows": len(rows), "off_grid": 0,
                      "non_monotonic": 0, "extreme_ret": 0, "dup_ts": 0}
                 prev_t, prev_mid, seen = None, None, set()
+                var = None
                 for t, mid in rows:
                     if t in seen:
                         q["dup_ts"] += 1
@@ -107,9 +121,12 @@ def audit_db(path: Path):
                         q["non_monotonic"] += 1
                     prev_t = t
                     if prev_mid and mid:
-                        if abs(mid / prev_mid - 1.0) > \
-                                EXTREME_RET_BY_TF["intraday"]:
+                        ret = mid / prev_mid - 1.0
+                        if abs(ret) > _extreme_threshold(var):
                             q["extreme_ret"] += 1
+                        var = (ret * ret if var is None else
+                               EWMA_LAMBDA * var
+                               + (1 - EWMA_LAMBDA) * ret * ret)
                     prev_mid = mid or prev_mid
                 q.update({"symbol": f"{src}:{sym}",
                           "timeframe": "snap"})
