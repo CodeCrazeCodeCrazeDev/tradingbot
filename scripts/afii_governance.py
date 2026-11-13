@@ -64,6 +64,11 @@ DEFAULT_GOVERNANCE = {
             ],
             "denied": ["method_promotion", "data_repair",
                        "external_action", "capital_allocation"],
+            "evidence": [
+                "var/decisions.jsonl",
+                "var/methods/ledger.jsonl",
+                "var/autonomous_cycle/reports",
+            ],
         },
         "aean": {
             "domain": "economic reasoning + venture operations",
@@ -73,8 +78,17 @@ DEFAULT_GOVERNANCE = {
             "permissions": [],
             "denied": ["all — registered, not yet producing "
                        "measured evidence under this governance"],
+            "evidence": [
+                "C:\\Users\\peterson\\aean\\docs\\PLAN_STATUS.md",
+                "C:\\Users\\peterson\\aean\\docs\\"
+                "56_GATE_A_TECHNICAL_EVIDENCE_V1.md",
+                "C:\\Users\\peterson\\aean\\data\\bakeoff_results.json",
+            ],
         },
     },
+    "evidence_rule": "Activation above L0 requires resolvable measured-"
+                     "evidence links AND an operator signature — the "
+                     "kernel checks links exist; it never judges quality.",
 }
 
 
@@ -112,9 +126,12 @@ def check_authorization(subsystem: str, action_class: str,
         return {"authorized": False,
                 "reason": f"subsystem {subsystem!r} not registered"}
     if sub.get("status") != "active":
+        ev = verify_evidence(subsystem).get(subsystem, {})
         return {"authorized": False,
                 "reason": f"subsystem {subsystem!r} status="
-                          f"{sub.get('status')!r}"}
+                          f"{sub.get('status')!r}; evidence resolvable "
+                          f"{ev.get('resolvable', '0/0')} — activation "
+                          "needs measured links + operator signature"}
     if action_class in sub.get("denied", []):
         return {"authorized": False,
                 "reason": f"{action_class!r} denied for {subsystem}"}
@@ -159,6 +176,33 @@ def record_capital(subsystem: str, kind: str, amount: float,
     return rec
 
 
+def verify_evidence(subsystem: str | None = None) -> dict:
+    """Resolve each subsystem's declared evidence links. Reports
+    exists/missing/mtime per link — the kernel CHECKS linkage, it
+    never pretends to judge the evidence itself."""
+    gov = load_governance()
+    out = {}
+    for name, sub in gov.get("subsystems", {}).items():
+        if subsystem and name != subsystem:
+            continue
+        links = []
+        for p in sub.get("evidence", []):
+            path = Path(p)
+            if not path.is_absolute():
+                path = ROOT / p
+            links.append({
+                "path": p,
+                "exists": path.exists(),
+                "mtime": (datetime.fromtimestamp(
+                    path.stat().st_mtime, tz=timezone.utc)
+                    .isoformat(timespec="seconds")
+                    if path.exists() else None)})
+        n_ok = sum(1 for l in links if l["exists"])
+        out[name] = {"links": links,
+                     "resolvable": f"{n_ok}/{len(links)}"}
+    return out
+
+
 def capital_position(subsystem: str | None = None) -> dict:
     """Derived balances per subsystem: allocated - obligations -
     reserves + releases = available headroom."""
@@ -197,6 +241,8 @@ def status() -> dict:
                            "risk_budget_bps": v.get("risk_budget_bps")}
                        for k, v in gov.get("subsystems", {}).items()},
         "capital": capital_position(),
+        "evidence": {k: v["resolvable"]
+                     for k, v in verify_evidence().items()},
     }
 
 
@@ -204,6 +250,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("status")
+    ve = sub.add_parser("verify")
+    ve.add_argument("subsystem", nargs="?")
     au = sub.add_parser("auth")
     au.add_argument("subsystem")
     au.add_argument("action_class")
@@ -222,6 +270,8 @@ def main() -> int:
 
     if args.cmd == "status":
         print(json.dumps(status(), indent=2))
+    elif args.cmd == "verify":
+        print(json.dumps(verify_evidence(args.subsystem), indent=2))
     elif args.cmd == "auth":
         print(json.dumps(check_authorization(
             args.subsystem, args.action_class,
