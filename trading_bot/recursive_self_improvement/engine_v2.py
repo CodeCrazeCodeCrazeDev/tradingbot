@@ -837,11 +837,18 @@ class PromotionLadder:
         {"operator_approved", "shadow", "paper", "canary", "production"})
 
     def __init__(self, operator_public_key: Ed25519PublicKey,
-                 clock: Callable[[], float] = time.time) -> None:
+                 clock: Callable[[], float] = time.time,
+                 soak_requirements: Optional[Mapping[str, int]] = None) -> None:
         self._key = operator_public_key
         self._clock = clock
         self._states: Dict[str, str] = {}
         self._contract_for: Dict[str, str] = {}
+        # Graduated promotion (Algory incubation analog): stages listed here
+        # additionally require accrued soak evidence — recorded live/paper
+        # cycles — before the signed authorization is honored. Empty by
+        # default; operators opt in per deployment policy.
+        self._soak_req: Dict[str, int] = dict(soak_requirements or {})
+        self._soak_cycles: Dict[str, int] = {}
 
     def state(self, genome_id: str) -> str:
         return self._states.get(genome_id, "proposed")
@@ -872,8 +879,29 @@ class PromotionLadder:
                 self._key.verify(bytes.fromhex(signature), authorization.canonical())
             except (InvalidSignature, ValueError, TypeError, AttributeError) as exc:
                 raise AuthorizationError("invalid operator signature") from exc
+        required = self._soak_req.get(stage, 0)
+        if required and self._soak_cycles.get(genome_id, 0) < required:
+            raise AuthorizationError(
+                f"stage {stage} requires {required} accrued soak cycles, "
+                f"have {self._soak_cycles.get(genome_id, 0)}")
         self._states[genome_id] = stage
         return stage
+
+    def record_soak(self, genome_id: str, cycles: int,
+                    metrics: Optional[Mapping[str, Any]] = None) -> int:
+        """Accrue soak evidence for a genome (paper/canary live cycles).
+
+        ``cycles`` must be a non-negative int; ``metrics`` is stored for
+        audit but the gate counts cycles only — quality gates belong to
+        the reassessment/evaluation layers, not the ladder.
+        """
+        if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles < 0:
+            raise ValueError("soak cycles must be a non-negative int")
+        self._soak_cycles[genome_id] = self._soak_cycles.get(genome_id, 0) + cycles
+        return self._soak_cycles[genome_id]
+
+    def soak_cycles(self, genome_id: str) -> int:
+        return self._soak_cycles.get(genome_id, 0)
 
     def rollback(self, genome_id: str) -> str:
         self._states[genome_id] = "rolled_back"
