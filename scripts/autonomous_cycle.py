@@ -179,6 +179,18 @@ def harvest_specs(ledger_path: Path, since_offset: int,
     return specs[:max_specs]
 
 
+# required_data='funding' specs can't run on the generic OHLCV
+# dataset list — evaluate them on the venues/symbols funding_data.db
+# actually covers (binance 8h prints, hyperliquid hourly).
+FUNDING_DATASETS = [
+    ("binance_data.db", s, tf)
+    for s in ("BTC", "ETH", "SOL") for tf in ("15m", "1h")
+] + [
+    ("hl_data.db", s, tf)
+    for s in ("BTC", "ETH", "SOL") for tf in ("15m", "1h")
+]
+
+
 def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
                           cost_floor: float, segments: int,
                           margin: float) -> list:
@@ -206,7 +218,9 @@ def eval_spec_on_datasets(spec_dict: dict, datasets, horizon: int,
         return [{"dataset": None, "status": "spec_rejected",
                  "reason": str(e)}]
     out = []
-    for db, sym, tf in datasets:
+    eval_datasets = (FUNDING_DATASETS
+                     if spec.required_data == "funding" else datasets)
+    for db, sym, tf in eval_datasets:
         try:
             qf = quarantine_flags(db, sym, tf)
             if qf and qf["quarantined"]:
@@ -498,7 +512,10 @@ def watch_escalation_specs(queue: dict, cap: int) -> list:
     for s in queue.get("specs", []):
         if s.get("classification") != "WATCH":
             continue
-        if not s.get("near_miss_datasets"):
+        headroom = s.get("cost_headroom_bps")
+        if (not s.get("near_miss_datasets")
+                and not (isinstance(headroom, (int, float))
+                         and headroom > 0)):
             continue
         spec = s.get("spec")
         if not isinstance(spec, dict) or not spec.get("family"):
