@@ -122,6 +122,17 @@ them — today they are separate tools.
   consumes. This is THE loop: knowledge → candidate → measured verdict
   → KG claim. Today knowledge enters the KG but executable candidates
   never form.
+- **Measured 2026-11-13** (scout ledger, extract_specs replayed):
+  83 records → 61 anchored → only 15 spec-capable (≈25% of anchored;
+  stored method_specs=2 — most records predate the extraction seam).
+  The missed class is dominated by microstructure/LOB methods
+  (20/43: order-flow imbalance, market impact, AMMs, LOB dynamics) —
+  methods needing order-book data our DBs do not hold (OHLCV only).
+  So the yield gap is a data-capability gap, not a template gap:
+  a lob/microstructure family is only meaningful once a
+  required_data='lob' eval path + an LOB feed exist — the
+  required_data mechanism added for funding already provides the
+  honest route (spec → needs_data → data_request).
 - **Gap**: scheduled `run_research_cycle` generates questions from
   internal uncertainty only; it does not consume scout output.
 
